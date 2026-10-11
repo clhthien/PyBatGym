@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Tổng hợp benchmark</h1>
+<p class="cmd">$ {{ command }}</p>
+{% if error %}
+  <div class="error">Không đọc được kết quả: {{ error }}.<br>
+  Hãy chạy một lần benchmark/huấn luyện để tạo file CSV, hoặc đặt biến PYBATGYM_RESULTS_DIR trỏ đúng thư mục kết quả.</div>
+{% elif not table.rows %}
+  <p class="empty">File CSV có header nhưng chưa có dòng dữ liệu nào.</p>
+{% else %}
+  <div class="scroll">
+  <table>
+    <tr>{% for c in table.columns %}<th>{{ c }}</th>{% endfor %}</tr>
+    {% for r in table.rows %}
+    <tr>{% for c in table.columns %}<td>{{ r[c] }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table>
+  </div>
+{% endif %}
+{% endblock %}

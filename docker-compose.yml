@@ -55,3 +55,15 @@ services:
       - BATSIM_WORKLOAD=${BATSIM_WORKLOAD:-/workspace/data/workloads/medium_workload.json}
       - BATSIM_PLATFORM=${BATSIM_PLATFORM:-/workspace/data/platforms/medium_platform.xml}
       - BATSIM_SOCKET=${BATSIM_SOCKET:-tcp://shell:28000}
+
+  viz:
+    image: ghcr.io/thinhnguyen7204/pybatgym:latest
+    volumes:
+      - .:/workspace
+    working_dir: /workspace/pybatgym_viz
+    # Cùng kiểu với service tensorboard: ghi đè entrypoint (shell service dùng entrypoint.sh riêng)
+    entrypoint: [ "/bin/bash", "-c", "source /opt/venv/bin/activate && pip install -q flask && python app.py" ]
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1

@@ -1,0 +1,6 @@
+---
+name: PyBatGym Results
+description: Hiển thị kết quả benchmark của PyBatGym (bảng và biểu đồ)
+icon: fa://bar-chart
+category: Files
+subcategory: Utilities

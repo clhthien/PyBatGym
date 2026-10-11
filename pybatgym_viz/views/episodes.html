@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Kết quả từng episode</h1>
+<p class="cmd">$ {{ command }}</p>
+{% if error %}
+  <div class="error">Không đọc được kết quả: {{ error }}.</div>
+{% elif not table.rows %}
+  <p class="empty">Chưa có dữ liệu episode.</p>
+{% else %}
+  {% if col %}
+  <form method="get" style="margin-bottom:.75rem">
+    <label>Chỉ số vẽ biểu đồ:
+      <select name="col" onchange="this.form.submit()">
+        {% for c in num_cols %}<option value="{{ c }}" {{ 'selected' if c == col }}>{{ c }}</option>{% endfor %}
+      </select>
+    </label>
+  </form>
+  <div class="scroll" style="padding:1rem;margin-bottom:1rem"><canvas id="chart" height="110"></canvas></div>
+  {% endif %}
+  <div class="scroll">
+  <table>
+    <tr>{% for c in table.columns %}<th>{{ c }}</th>{% endfor %}</tr>
+    {% for r in table.rows %}
+    <tr>{% for c in table.columns %}<td>{{ r[c] }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% if col %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    const data = {{ series | tojson }};
+    new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: { labels: {{ labels | tojson }},
+              datasets: [{ label: {{ col | tojson }}, data: data, borderColor: '#1f5f8b', tension: .15 }] },
+      options: { scales: { x: { title: { display: true, text: 'Episode' } } } }
+    });
+  </script>
+  {% endif %}
+{% endif %}
+{% endblock %}

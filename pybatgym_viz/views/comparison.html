@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>So sánh các run trong TensorBoard</h1>
+<p class="cmd">đọc từ: {{ logs_dir }}</p>
+{% if error %}
+  <div class="error">{{ error }}</div>
+{% else %}
+  <h2>Giá trị cuối cùng của mỗi tag</h2>
+  <div class="scroll">
+  <table>
+    <tr>{% for c in table.columns %}<th>{{ c }}</th>{% endfor %}</tr>
+    {% for r in table.rows %}
+    <tr>{% for c in table.columns %}<td>{{ r[c] }}</td>{% endfor %}</tr>
+    {% endfor %}
+  </table>
+  </div>
+  <h2>Diễn biến theo step</h2>
+  <form method="get" style="margin-bottom:.75rem">
+    <label>Tag:
+      <select name="tag" onchange="this.form.submit()">
+        {% for t in tags %}<option value="{{ t }}" {{ 'selected' if t == tag }}>{{ t }}</option>{% endfor %}
+      </select>
+    </label>
+  </form>
+  <div class="scroll" style="padding:1rem"><canvas id="chart" height="110"></canvas></div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    const sets = {{ datasets | tojson }};
+    const colors = ['#1f5f8b', '#b5532a', '#3f7d4e', '#7a4aa0', '#8a7a1f', '#555'];
+    new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: { datasets: sets.map((d, i) => ({ label: d.label, data: d.points,
+                borderColor: colors[i % colors.length], tension: .15, pointRadius: 4 })) },
+      options: { parsing: false, scales: { x: { type: 'linear', title: { display: true, text: 'Step' } } } }
+    });
+  </script>
+{% endif %}
+{% endblock %}
