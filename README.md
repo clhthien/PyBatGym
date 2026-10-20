@@ -45,7 +45,7 @@ PyBatGym được xây dựng nhằm:
 ### 1. Clone project
 
 ```bash
-git clone https://github.com/ThinhNguyen7204/PyBatGym.git
+git clone https://github.com/clhthien/PyBatGym.git
 cd PyBatGym
 ```
 
@@ -152,7 +152,6 @@ PyBatGym/
 ├── data/
 │   ├── platforms/
 │   └── workloads/
-├── docs/
 ├── examples/
 ├── logs/
 ├── models/
@@ -165,8 +164,14 @@ PyBatGym/
 │   ├── envs/
 │   ├── experiments/
 │   ├── plugins/
+│   ├── results/
 │   ├── rewards/
 │   └── spaces/
+├── pybatgym_viz/
+│   ├── public/
+│   ├── test/
+│   ├── tmp/
+│   ├── view/
 ├── scripts/
 └── tests/
 ```

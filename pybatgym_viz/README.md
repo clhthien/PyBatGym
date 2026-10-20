@@ -20,34 +20,19 @@ lấy raw data từ lệnh shell (`cat <csv>`) -> parse thành object trung gian
 
 ## Chạy thử trong Docker (Windows)
 
-1. Thêm service vào `docker-compose.yml` của PyBatGym:
-
-```yaml
-  viz:
-    image: ghcr.io/thinhnguyen7204/pybatgym:latest
-    volumes:
-      - .:/workspace
-    working_dir: /workspace/pybatgym_viz
-    # Cùng kiểu với service tensorboard: ghi đè entrypoint (shell service dùng entrypoint.sh riêng)
-    entrypoint: [ "/bin/bash", "-c", "source /opt/venv/bin/activate && pip install -q flask && python app.py" ]
-    ports:
-      - "5000:5000"
-    environment:
-      - PYTHONUNBUFFERED=1
-```
-
-2. Chép thư mục `pybatgym_viz/` vào gốc repo PyBatGym, rồi:
+Service `viz` đã có sẵn trong `docker-compose.yml` ở thư mục gốc repo (cùng cách với service `tensorboard`). Từ thư mục gốc:
 
 ```powershell
 docker-compose up -d viz
+docker-compose logs -f viz
 ```
 
-3. Mở http://localhost:5000
-
-Thư mục kết quả mặc định: `/workspace/pybatgym/results` (đổi bằng biến `PYBATGYM_RESULTS_DIR`).
+Mở http://localhost:5000. Biến môi trường `PYBATGYM_RESULTS_DIR`, `PYBATGYM_LOGS_DIR`, `FLASK_DEBUG` được đặt trong `docker-compose.yml`.
 
 ## Test
 
 ```bash
-pip install pytest && pytest test/ -v
+pip install flask pytest && pytest test/ -v
 ```
+
+`test/test_command.py` kiểm tra phần đọc và parse dữ liệu. `test/test_ood_ready.py` kiểm tra mức độ sẵn sàng cho Open OnDemand (entry point `passenger_wsgi.py`, link khi chạy dưới đường dẫn con, khóa trong `manifest.yml`, không sập khi chưa có dữ liệu).

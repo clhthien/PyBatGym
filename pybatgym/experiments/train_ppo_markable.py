@@ -190,6 +190,8 @@ def validate_on_real(model: MaskablePPO, real_config: PyBatGymConfig, num_episod
     env_tmp.close()
 
     waits, utils, sds, rewards = [], [], [], []
+    makespans, step_counts, completed_counts, terms, truncs = [], [], [], [], []
+
     env = None
     try:
         env = PyBatGymEnv(config=real_config)
@@ -245,6 +247,11 @@ def validate_on_real(model: MaskablePPO, real_config: PyBatGymConfig, num_episod
                 seed=seed
             )
 
+            makespans.append(makespan)
+            step_counts.append(steps)
+            completed_counts.append(n)
+            terms.append(int(terminated))
+            truncs.append(int(truncated))
             waits.append(avg_wait)
             utils.append(util)
             sds.append(avg_sd)
@@ -268,18 +275,21 @@ def validate_on_real(model: MaskablePPO, real_config: PyBatGymConfig, num_episod
     # Log summary to CSV
     summary_metrics = {
         "total_reward": avg_metrics["avg_reward"],
-        "completed_jobs": n if waits else 0,
+        "completed_jobs": int(round(np.mean(completed_counts))) if completed_counts else 0,
         "avg_waiting_time": avg_metrics["avg_waiting_time"],
         "avg_bounded_slowdown": avg_metrics["avg_slowdown"],
         "utilization": avg_metrics["avg_utilization"],
-        "makespan": makespan if waits else 0,
-        "num_steps": steps if waits else 0,
+        "makespan": float(np.mean(makespans)) if makespans else 0.0,
+        "num_steps": int(round(np.mean(step_counts))) if step_counts else 0,
+        "terminated": float(np.mean(terms)) if terms else 0.0,   # tỉ lệ episode kết thúc tự nhiên
+        "truncated": float(np.mean(truncs)) if truncs else 0.0,
     }
     logger.log_summary(
         metrics=summary_metrics,
         policy=policy_name,
         workload=workload_name,
-        platform=platform_name
+        platform=platform_name,
+        seed=f"200-{200 + num_episodes - 1}",
     )
 
     return avg_metrics

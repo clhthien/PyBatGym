@@ -245,7 +245,7 @@ def validate_on_real(model: PPO, real_config: PyBatGymConfig, num_episodes: int 
                 platform=platform_name,
                 seed=seed
             )
-
+        
             waits.append(avg_wait)
             utils.append(util)
             sds.append(avg_sd)

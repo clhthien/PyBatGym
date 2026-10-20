@@ -3,11 +3,17 @@
 # ============================================================
 # PyBatGym Docker Compose
 #
-# Image đã chứa sẵn: Python, PyTorch, TensorFlow, SB3,...
+# Image chứa sẵn: Python, PyTorch, TensorFlow, SB3,...
 # Code được mount từ thư mục hiện tại vào /workspace
 #
+# Lần đầu (tạo image tên ghcr.io/clhthien/pybatgym:latest):
+#   docker-compose build shell
+#   (hoặc đổi tên image cũ đã có trên máy, không cần build lại:
+#    docker tag ghcr.io/thinhnguyen7204/pybatgym:latest ghcr.io/clhthien/pybatgym:latest)
+#
 # Cách dùng:
-#   docker-compose run shell   → mở terminal Ubuntu tại /workspace
+#   docker-compose up -d shell tensorboard viz
+#   docker-compose exec shell bash
 #   (sau đó tự gõ lệnh test/train bên trong terminal đó)
 # ============================================================
 
@@ -15,7 +21,8 @@ services:
 
   # ── Mở Ubuntu terminal tại /workspace ─────────────────
   shell:
-    image: ghcr.io/thinhnguyen7204/pybatgym:latest
+    build: .
+    image: ghcr.io/clhthien/pybatgym:latest
     volumes:
       - .:/workspace # code mount từ Windows vào Ubuntu
       - /var/run/docker.sock:/var/run/docker.sock # cho phép Python restart BatSim container
@@ -30,7 +37,7 @@ services:
 
   # ── TensorBoard (xem training metrics) ────────────────
   tensorboard:
-    image: ghcr.io/thinhnguyen7204/pybatgym:latest
+    image: ghcr.io/clhthien/pybatgym:latest
     volumes:
       - .:/workspace
     working_dir: /workspace
@@ -56,14 +63,19 @@ services:
       - BATSIM_PLATFORM=${BATSIM_PLATFORM:-/workspace/data/platforms/medium_platform.xml}
       - BATSIM_SOCKET=${BATSIM_SOCKET:-tcp://shell:28000}
 
+  # ── Web trực quan hóa kết quả (Flask, kiểu Passenger app của Open OnDemand) ──
   viz:
-    image: ghcr.io/thinhnguyen7204/pybatgym:latest
+    image: ghcr.io/clhthien/pybatgym:latest
     volumes:
       - .:/workspace
     working_dir: /workspace/pybatgym_viz
-    # Cùng kiểu với service tensorboard: ghi đè entrypoint (shell service dùng entrypoint.sh riêng)
+    # Cùng kiểu với service tensorboard: ghi đè entrypoint (service shell dùng entrypoint.sh riêng)
     entrypoint: [ "/bin/bash", "-c", "source /opt/venv/bin/activate && pip install -q flask && python app.py" ]
     ports:
-      - "5000:5000"
+      - "127.0.0.1:5000:5000" # chỉ mở cho máy của bạn (debug mode không nên lộ ra mạng LAN)
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - FLASK_DEBUG=1 # 1 = tự reload khi sửa code; đặt 0 khi demo/chia sẻ
+      - PYBATGYM_RESULTS_DIR=/workspace/pybatgym/results
+      - PYBATGYM_LOGS_DIR=/workspace/logs/tensorboard_comparison
