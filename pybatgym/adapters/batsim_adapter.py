@@ -518,6 +518,8 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
                 self._free_cores.update(py_job.allocated_core_set)
             py_job.status = JobStatus.COMPLETED
             py_job.finish_time = self._internal_time
+            if py_job.start_time is not None:
+                py_job.actual_runtime = max(0.0, py_job.finish_time - py_job.start_time)
             self._running_jobs.remove(py_job)
             self._completed_jobs.append(py_job)
             self._resource.release(py_job.requested_resources)

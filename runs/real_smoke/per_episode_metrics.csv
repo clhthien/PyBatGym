@@ -1,0 +1,2 @@
+timestamp,episode_idx,experiment_id,policy,workload,platform,seed,total_reward,completed_jobs,avg_waiting_time,avg_bounded_slowdown,utilization,makespan,throughput,num_steps,invalid_actions,terminated,truncated
+2026-10-21 03:13:37,0,20261021-031143_real,FCFS,gen_c32_s0,32x1,0,-1.000000,0,0.000000,0.000000,0.000000,0.000000,0.000000,1,0,1,0

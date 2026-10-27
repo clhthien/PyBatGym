@@ -1,0 +1,2 @@
+run_id,policy,workload,seed,step,sim_time,n_pending,free_cores,n_valid_actions,action,action_name,valid,chosen_job_id,chosen_job_cores,chosen_job_walltime,chosen_job_wait,reward,delta_utilization,completed_wait,completed_slowdown,schedule_bonus,wait_penalty,idle_penalty,episode_bonus,mask
+20261021-031143_real,FCFS,gen_c32_s0,0,0,0.0,0,32,1,10,WAIT,1,,,,,-1.0,0.0,0.0,0.0,0.0,0.0,0.0,-1.0,000000000010

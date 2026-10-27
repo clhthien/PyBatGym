@@ -1,0 +1,19 @@
+{
+  "run_id": "20261021-031143_real",
+  "git_commit": "d158b307160c16287de0c513dc24174f94c93052",
+  "python": "3.10.12",
+  "numpy": "2.2.6",
+  "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "argv": [
+    "pybatgym/experiments/run_benchmark.py",
+    "--backend",
+    "real",
+    "--workloads",
+    "data/workloads/gen_c32_s0.json",
+    "--policies",
+    "fcfs",
+    "--out",
+    "runs/real_smoke"
+  ],
+  "started": "2026-10-21 03:11:43"
+}

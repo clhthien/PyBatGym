@@ -4,6 +4,9 @@ Supports three reward modes:
 - step: dense reward at every scheduling event
 - episodic: sparse reward at episode end
 - hybrid: combines step + episodic terminal bonus
+
+Bản này giữ nguyên công thức cũ, chỉ thêm `last_components`: dict tách reward của bước gần nhất
+thành từng thành phần (tổng các thành phần == reward trả về) để ghi vào log từng bước.
 """
 
 from __future__ import annotations
@@ -46,14 +49,21 @@ class DefaultRewardCalculator(RewardCalculator):
     INVALID_PENALTY = -0.05
     IDLE_PENALTY_FACTOR = 0.01
 
+    COMPONENT_KEYS = (
+        "delta_utilization", "completed_wait", "completed_slowdown",
+        "schedule_bonus", "wait_penalty", "idle_penalty",
+    )
+
     def __init__(self, weights: RewardWeights, reward_type: str = "hybrid") -> None:
         self._w = weights
         self._type = reward_type
         self._prev_utilization = 0.0
+        self.last_components: dict[str, float] = {k: 0.0 for k in self.COMPONENT_KEYS}
 
     def reset(self) -> None:
         """Reset internal state for new episode."""
         self._prev_utilization = 0.0
+        self.last_components = {k: 0.0 for k in self.COMPONENT_KEYS}
 
     def compute_step_reward(
         self,
@@ -61,36 +71,37 @@ class DefaultRewardCalculator(RewardCalculator):
         action_type: ScheduleCommandType,
         state: dict[str, Any],
     ) -> float:
+        comp = {k: 0.0 for k in self.COMPONENT_KEYS}
+        self.last_components = comp
         if self._type == "episodic":
             return 0.0
 
         resource: Resource = state["resource"]
-        reward = 0.0
 
         # Utilization improvement
         delta_util = resource.utilization - self._prev_utilization
-        reward += delta_util * self._w.utilization
+        comp["delta_utilization"] = delta_util * self._w.utilization
 
         # Schedule bonus / invalid penalty
         if action_type == ScheduleCommandType.EXECUTE_JOB:
-            reward += self.SCHEDULE_BONUS
+            comp["schedule_bonus"] = self.SCHEDULE_BONUS
         elif action_type == ScheduleCommandType.WAIT and state.get("pending_jobs"):
-            reward += self.INVALID_PENALTY
+            comp["wait_penalty"] = self.INVALID_PENALTY
 
         # Job completion rewards
         for event in events:
             if event.event_type == EventType.JOB_COMPLETED and event.job:
                 job = event.job
-                reward -= self._w.waiting_time * _normalize(job.waiting_time, 1000.0)
-                reward -= self._w.slowdown * _normalize(job.bounded_slowdown - 1.0, 100.0)
+                comp["completed_wait"] -= self._w.waiting_time * _normalize(job.waiting_time, 1000.0)
+                comp["completed_slowdown"] -= self._w.slowdown * _normalize(job.bounded_slowdown - 1.0, 100.0)
 
         # Idle penalty
         if resource.free_cores > 0 and state.get("pending_jobs"):
             idle_ratio = resource.free_cores / max(resource.total_cores, 1)
-            reward -= self.IDLE_PENALTY_FACTOR * idle_ratio
+            comp["idle_penalty"] = -self.IDLE_PENALTY_FACTOR * idle_ratio
 
         self._prev_utilization = resource.utilization
-        return reward
+        return sum(comp.values())
 
     def compute_episode_reward(
         self, completed_jobs: list[Job], total_time: float, total_cores: int = 64,

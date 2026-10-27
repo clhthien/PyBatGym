@@ -1,0 +1,60 @@
+{
+  "args": {
+    "preset": "medium_batsim",
+    "config": null,
+    "workloads": [
+      "data/workloads/gen_c32_s*.json"
+    ],
+    "policies": [
+      "fcfs",
+      "sjf",
+      "easy",
+      "random"
+    ],
+    "backend": "mock",
+    "model": null,
+    "random_seeds": 3,
+    "out": "runs/bench_mock_v1"
+  },
+  "workload_files": [
+    "data/workloads/gen_c32_s0.json",
+    "data/workloads/gen_c32_s1.json",
+    "data/workloads/gen_c32_s2.json",
+    "data/workloads/gen_c32_s3.json",
+    "data/workloads/gen_c32_s4.json"
+  ],
+  "config": {
+    "mode": "mock",
+    "platform": {
+      "total_nodes": 32,
+      "cores_per_node": 1,
+      "platform_path": null
+    },
+    "workload": {
+      "source": "trace",
+      "trace_path": "/workspace/data/workloads/gen_c32_s0.json",
+      "num_jobs": 100,
+      "max_job_runtime": 100.0,
+      "max_job_cores": 32,
+      "seed": 42
+    },
+    "episode": {
+      "max_simulation_time": 50000.0,
+      "max_steps": 5000
+    },
+    "observation": {
+      "top_k_jobs": 10,
+      "max_queue_length": 200,
+      "max_waiting_time": 5000.0,
+      "max_bounded_slowdown": 100.0
+    },
+    "reward_weights": {
+      "utilization": 0.3,
+      "waiting_time": 0.5,
+      "slowdown": 0.15,
+      "throughput": 0.05
+    },
+    "reward_type": "hybrid",
+    "plugins": []
+  }
+}

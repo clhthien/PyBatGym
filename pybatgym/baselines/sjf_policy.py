@@ -1,26 +1,20 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from ._window import wait_index, window
+
 if TYPE_CHECKING:
     from pybatgym.envs import PyBatGymEnv
 
+
 def sjf_policy(env: PyBatGymEnv) -> int:
-    """Shortest-Job-First: schedule the job with smallest requested walltime."""
-    state = env._state
-    pending_jobs = state.get("pending_jobs", [])
-    if not pending_jobs:
-        return env.action_space.n - 1
+    """Shortest-Job-First: trong K job đầu hàng đợi, chọn job vừa core rảnh và có walltime ngắn nhất.
 
-    resource = state.get("resource")
-    sorted_by_submit = sorted(pending_jobs, key=lambda j: j.submit_time)
-    
-    candidates = [
-        (i, job) for i, job in enumerate(sorted_by_submit)
-        if resource.can_allocate(job.requested_resources)
-    ]
-
+    Chỉ xét cửa sổ top-K (giống agent RL). Hòa thì chọn job đến sớm hơn.
+    """
+    jobs = window(env)
+    resource = env._state["resource"]
+    candidates = [(i, j) for i, j in enumerate(jobs) if resource.can_allocate(j.requested_resources)]
     if not candidates:
-        return len(sorted_by_submit)
-
-    best_idx, _ = min(candidates, key=lambda pair: pair[1].requested_walltime)
-    return best_idx
+        return wait_index(env)
+    return min(candidates, key=lambda p: (p[1].requested_walltime, p[1].submit_time))[0]

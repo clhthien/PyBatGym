@@ -56,6 +56,21 @@ BATSIM_PLATFORM=${BATSIM_PLATFORM:-/workspace/data/platforms/medium_platform.xml
 BATSIM_WORKLOAD=${BATSIM_WORKLOAD:-/workspace/data/workloads/medium_workload.json}
 BATSIM_SOCKET=${BATSIM_SOCKET:-tcp://shell:28000}
 
+# ── Ghi đè workload theo từng episode ─────────────────────────────────────────
+# run_benchmark.py (backend real) ghi đường dẫn workload vào file này trước mỗi lần restart.
+# Dùng builtin `read`/`[ -f ]` vì image Nix có thể không có `cat` trong PATH.
+OVERRIDE_FILE="${BATSIM_WORKLOAD_FILE:-/workspace/data/.batsim_workload}"
+if [ -f "$OVERRIDE_FILE" ]; then
+    OVERRIDE=""
+    IFS= read -r OVERRIDE < "$OVERRIDE_FILE"
+    if [ -n "$OVERRIDE" ] && [ -f "$OVERRIDE" ]; then
+        BATSIM_WORKLOAD="$OVERRIDE"
+        echo "[batsim_start] Workload override from $OVERRIDE_FILE"
+    else
+        echo "[batsim_start] WARNING: override file points to a missing workload: '$OVERRIDE' (using default)"
+    fi
+fi
+
 echo "[batsim_start] Platform : $BATSIM_PLATFORM"
 echo "[batsim_start] Workload : $BATSIM_WORKLOAD"
 echo "[batsim_start] Socket   : $BATSIM_SOCKET"

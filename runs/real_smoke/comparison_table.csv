@@ -1,0 +1,2 @@
+policy,n_workloads,n_episodes,n_incomplete,invalid_actions_total,total_reward_mean,total_reward_std,avg_waiting_time_mean,avg_waiting_time_std,avg_bounded_slowdown_mean,avg_bounded_slowdown_std,utilization_mean,utilization_std,makespan_mean,makespan_std,throughput_mean,throughput_std
+FCFS,1,1,1,0,-1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

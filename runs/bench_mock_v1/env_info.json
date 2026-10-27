@@ -1,0 +1,22 @@
+{
+  "run_id": "20261021-025146_mock",
+  "git_commit": "d158b307160c16287de0c513dc24174f94c93052",
+  "python": "3.10.12",
+  "numpy": "2.2.6",
+  "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "argv": [
+    "pybatgym/experiments/run_benchmark.py",
+    "--workloads",
+    "data/workloads/gen_c32_s*.json",
+    "--policies",
+    "fcfs",
+    "sjf",
+    "easy",
+    "random",
+    "--random-seeds",
+    "3",
+    "--out",
+    "runs/bench_mock_v1"
+  ],
+  "started": "2026-10-21 02:51:46"
+}

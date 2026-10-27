@@ -1,62 +1,48 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from ._window import running_estimates, wait_index, window
+
 if TYPE_CHECKING:
     from pybatgym.envs import PyBatGymEnv
 
+
 def easy_backfilling_policy(env: PyBatGymEnv) -> int:
-    """EASY Backfilling heuristic policy.
+    """EASY Backfilling.
 
-    1. Try to schedule the first (oldest) pending job.
-    2. If it doesn't fit, estimate when resources will free up (shadow time).
-    3. Backfill smaller jobs that finish before the shadow time.
+    1. Job đầu hàng đợi vừa core rảnh -> chạy ngay.
+    2. Ngược lại, tính shadow time (lúc sớm nhất job đầu có đủ core, theo walltime ước tính của
+       các job đang chạy) và số core dư tại thời điểm đó.
+    3. Backfill job đứng sau nếu nó vừa core rảnh hiện tại VÀ (kết thúc trước shadow time
+       HOẶC chỉ dùng core dư), nên không làm trễ job đầu hàng đợi.
+    Chỉ xét K job đầu hàng đợi (cùng cửa sổ với agent RL).
     """
-    state = env._state
-    pending_jobs = state.get("pending_jobs", [])
-    if not pending_jobs:
-        return env.action_space.n - 1
+    wait = wait_index(env)
+    jobs = window(env)
+    if not jobs:
+        return wait
 
-    resource = state.get("resource")
-    sorted_jobs = sorted(pending_jobs, key=lambda j: j.submit_time)
-    first_job = sorted_jobs[0]
+    resource = env._state["resource"]
+    head = jobs[0]
+    if resource.can_allocate(head.requested_resources):
+        return 0
 
-    if resource.can_allocate(first_job.requested_resources):
-        return 0  # Schedule the first job
-
-    # --- Estimate shadow time from running jobs ---
-    sim_time = env._adapter.get_current_time()
-    # Attempting to access internal adapter state for shadow time estimation
-    running_jobs_raw = getattr(env._adapter, "_running_jobs", [])
-    if not running_jobs_raw:
-        return len(sorted_jobs)  # WAIT — nothing running, can't backfill
-
-    # Build (expected_completion_time, cores_freed) list.
-    expected_completions = []
-    for rj in running_jobs_raw:
-        if hasattr(rj, "finish_time") and hasattr(rj, "cores"):
-            # MockAdapter _RunningJob
-            expected_completions.append((rj.finish_time, rj.cores))
-        elif hasattr(rj, "requested_walltime"):
-            # Fallback: raw Job object (e.g. RealBatsimAdapter)
-            est_finish = sim_time + rj.requested_walltime
-            expected_completions.append((est_finish, rj.requested_resources))
-    expected_completions.sort()
-
-    freed_cores = resource.free_cores
-    shadow_time = sim_time
-
-    for comp_time, cores in expected_completions:
-        shadow_time = comp_time
-        freed_cores += cores
-        if freed_cores >= first_job.requested_resources:
+    now = env._adapter.get_current_time()
+    free = resource.free_cores
+    shadow = now
+    for finish, cores in sorted(running_estimates(env)):
+        free += cores
+        shadow = finish
+        if free >= head.requested_resources:
             break
+    else:
+        return wait  # không tính được shadow time (head không bao giờ vừa theo ước tính)
+    extra = free - head.requested_resources
 
-    # Backfill: try smaller jobs that finish before the shadow time
-    for i in range(1, len(sorted_jobs)):
-        job = sorted_jobs[i]
-        if job.requested_resources <= resource.free_cores:
-            expected_finish = sim_time + job.requested_walltime
-            if expected_finish <= shadow_time:
-                return i
-
-    return len(sorted_jobs)
+    for i in range(1, len(jobs)):
+        job = jobs[i]
+        if not resource.can_allocate(job.requested_resources):
+            continue
+        if now + job.requested_walltime <= shadow or job.requested_resources <= extra:
+            return i
+    return wait
