@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Scheduling Playground{% endblock %} · PyBatGym</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='playground.css') }}">
+  <script src="{{ url_for('static', filename='playground.js') }}" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('playground.home') }}"><span class="brand-icon">P<span>↗</span></span><span>PyBatGym<small>SCHEDULING LAB</small></span></a>
+    <div class="sidebar-label">KHÔNG GIAN NGHIÊN CỨU</div>
+    <a class="nav-item active" href="{{ url_for('playground.home') }}"><span>▦</span> Playground</a>
+    <a class="nav-item" href="{{ url_for('episodes') }}"><span>≋</span> Kết quả benchmark cũ</a>
+    <a class="nav-item" href="{{ url_for('comparison') }}"><span>⌁</span> TensorBoard comparison</a>
+    <div class="sidebar-bottom"><span class="online-dot"></span> Local workspace<small>Chuẩn bị cho Open OnDemand</small></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><span>Scheduling Policy <span class="muted">/</span> Playground</span><span class="environment">LOCAL EXPERIMENTS</span></header>
+    <main>{% block content %}{% endblock %}</main>
+    <footer>PyBatGym · Mỗi thí nghiệm được lưu độc lập và kiểm chứng trước khi báo thành công.</footer>
+  </div>
+</body>
+</html>

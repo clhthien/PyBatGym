@@ -1,6 +1,6 @@
 """Tương đương app.rb (Sinatra) trong tutorial. Flask thay cho Sinatra."""
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 
 from command import Command, numeric_columns, aggregate
 import tb_reader
@@ -15,6 +15,8 @@ NOT_METRICS = ("seed", "episode_idx", "experiment_id", "terminated", "truncated"
 
 # template_folder="views", static_folder="public" -> giữ đúng tên thư mục như tutorial
 app = Flask(__name__, template_folder="views", static_folder="public")
+from playground import initialize as initialize_playground
+initialize_playground(app)
 
 
 @app.context_processor
@@ -25,6 +27,8 @@ def helpers():
 
 @app.route("/")
 def index():
+    if os.environ.get('PYBATGYM_PLAYGROUND_HOME') == '1':
+        return redirect(url_for('playground.home'))
     cmd = Command(os.path.join(RESULTS_DIR, SUMMARY_CSV))
     table, error = cmd.exec()
     agg = aggregate(table) if not error else None

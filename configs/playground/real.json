@@ -1,0 +1,9 @@
+{
+  "backend": "real",
+  "workload": "gen_c32_s0",
+  "policies": ["fcfs", "sjf"],
+  "preset": "medium_batsim",
+  "seed": 0,
+  "random_seeds": 1,
+  "timeout_seconds": 120.0
+}

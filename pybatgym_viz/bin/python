@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+APP_PYTHON="${PYBATGYM_PYTHON:-$REPO_DIR/.venv/bin/python}"
+if [ ! -x "$APP_PYTHON" ]; then
+    echo "Set PYBATGYM_PYTHON to a Python >=3.10 environment with PyBatGym and Flask installed." >&2
+    exit 1
+fi
+export PYTHONPATH="$REPO_DIR${PYTHONPATH:+:$PYTHONPATH}"
+exec "$APP_PYTHON" "$@"

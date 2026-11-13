@@ -1,5 +1,7 @@
 # pybatgym_viz – web app hiển thị kết quả PyBatGym (theo mẫu Passenger app của Open OnDemand)
 
+**Stage 3 mới:** ứng dụng đã có form Playground nối runner, Launch nền, trạng thái/log và tải CSV. Xem `../PLAYGROUND.md`. Bản preview riêng chạy ở http://localhost:5050/; viz cũ ở cổng 5000 được giữ lại. Kiểm chứng OOD/Slurm thật chưa nằm trong bản local này.
+
 Tham chiếu: https://osc.github.io/ood-documentation/release-1.2/app-development/tutorials-passenger-apps/ps-to-quota.html
 
 ## Đối chiếu với tutorial OSC

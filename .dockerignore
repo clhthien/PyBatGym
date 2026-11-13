@@ -17,6 +17,7 @@ build/
 
 # ── Logs & outputs ─────────────────────────────────────────
 logs/
+runs/playground/
 *.log
 batsim_out*
 

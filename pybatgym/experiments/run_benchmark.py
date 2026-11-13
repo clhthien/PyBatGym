@@ -145,9 +145,9 @@ def _set_batsim_workload(path: str) -> None:
 # ── One episode ─────────────────────────────────────────────────────────────
 
 def run_episode(cfg, policy: Callable, policy_label: str, workload_path: str, seed: int,
-                run_id: str, step_w, job_w) -> dict[str, Any]:
+                run_id: str, step_w, job_w, adapter_factory=None) -> dict[str, Any]:
     workload = Path(workload_path).stem
-    env = PyBatGymEnv(config=cfg)
+    env = PyBatGymEnv(config=cfg, adapter=adapter_factory(cfg) if adapter_factory else None)
     try:
         env.reset(seed=seed)
         if hasattr(policy, "reset"):
@@ -250,7 +250,7 @@ def print_table(rows: list[dict]) -> None:
 
 # ── Main ────────────────────────────────────────────────────────────────────
 
-def main(argv: Optional[list[str]] = None) -> Path:
+def main(argv: Optional[list[str]] = None, *, adapter_factory=None) -> Path:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--preset", default="medium_batsim", help="tên file trong configs/ (không có .yaml)")
     ap.add_argument("--config", help="đường dẫn file YAML (ưu tiên hơn --preset)")
@@ -259,6 +259,7 @@ def main(argv: Optional[list[str]] = None) -> Path:
     ap.add_argument("--backend", choices=["mock", "real"], default="mock")
     ap.add_argument("--model", help="file .zip của MaskablePPO (khi dùng ppo_maskable)")
     ap.add_argument("--random-seeds", type=int, default=3, help="số seed cho policy random trên mỗi workload")
+    ap.add_argument("--seed", type=int, default=0, help="episode seed; random policy uses consecutive seeds from here")
     ap.add_argument("--out", help="thư mục kết quả (mặc định runs/<thời gian>_<backend>)")
     args = ap.parse_args(argv)
 
@@ -299,12 +300,13 @@ def main(argv: Optional[list[str]] = None) -> Path:
             for name in args.policies:
                 label = POLICY_LABELS[name]
                 policy = build_policy(name, args.model)
-                seeds = range(args.random_seeds) if name == "random" else [0]
+                seeds = range(args.seed, args.seed + args.random_seeds) if name == "random" else [args.seed]
                 for seed in seeds:
                     cfg = _make_config(args, wl)
-                    if args.backend == "real":
+                    cfg.workload.seed = seed
+                    if args.backend == "real" and adapter_factory is None:
                         _set_batsim_workload(wl)
-                    m = run_episode(cfg, policy, label, wl, seed, run_id, step_w, job_w)
+                    m = run_episode(cfg, policy, label, wl, seed, run_id, step_w, job_w, adapter_factory)
                     ok = m["completed_jobs"] == m["expected_jobs"] and m["terminated"] == 1
                     print("[%s] %-12s %-22s seed=%d  jobs=%d/%d  wait=%.1f  util=%.3f  makespan=%.0f  steps=%d  invalid=%d%s" % (
                         "OK " if ok else "WARN", label, Path(wl).stem, seed, m["completed_jobs"], m["expected_jobs"],

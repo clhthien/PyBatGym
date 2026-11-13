@@ -381,40 +381,11 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
             print(f"[RealBatsimAdapter] ERROR launching BatSim: {exc}")
             self._is_done = True
 
-    @staticmethod
-    def _patch_pybatsim():
-        """Monkey-patch pybatsim to bypass the running_simulation assertion.
-
-        pybatsim 3.1.0 `_read_bat_msg()` has:
-            assert not self.running_simulation, "A simulation is already running ..."
-        This fires when the previous simulation wasn't cleanly shut down (ZMQ
-        force-close leaves running_simulation=True).
-
-        Fix: patch _read_bat_msg to force-reset running_simulation before
-        processing SIMULATION_BEGINS.
-        """
-        try:
-            import batsim.batsim as _bmod
-            if getattr(_bmod.Batsim, '_patched', False):
-                return
-
-            _original_read = _bmod.Batsim._read_bat_msg
-
-            def _patched_read(self):
-                # Force-clear the flag so the assertion in SIMULATION_BEGINS
-                # handler never fires
-                self.running_simulation = False
-                return _original_read(self)
-
-            _bmod.Batsim._read_bat_msg = _patched_read
-            _bmod.Batsim._patched = True
-            print("[RealBatsimAdapter] Patched pybatsim running_simulation guard ✓")
-        except (ImportError, AttributeError):
-            pass
-
     def _start_pybatsim_thread(self) -> None:
         """Start pybatsim ZeroMQ server in background thread."""
-        self._patch_pybatsim()
+        # Each episode creates a fresh Batsim instance, initialized with
+        # running_simulation=False. Preserve its protocol state until it
+        # handles SIMULATION_ENDS and sends the final acknowledgement.
 
         def _run() -> None:
             try:
@@ -475,6 +446,7 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
         self._state_queue.put("READY")
 
     def onBeforeEvents(self) -> None:
+        self._internal_time = float(self.bs.time())
         self._needs_wakeup = False
 
     def onNoMoreJobsInWorkloads(self) -> None:
@@ -517,17 +489,26 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
             if hasattr(py_job, "allocated_core_set"):
                 self._free_cores.update(py_job.allocated_core_set)
             py_job.status = JobStatus.COMPLETED
-            py_job.finish_time = self._internal_time
+            py_job.finish_time = float(job.finish_time)
+
             if py_job.start_time is not None:
-                py_job.actual_runtime = max(0.0, py_job.finish_time - py_job.start_time)
+                runtime = py_job.finish_time - py_job.start_time
+
+                if runtime < -1e-9:
+                    raise ValueError(
+                        f"Invalid timestamps for job {py_job.job_id}: "
+                        f"start={py_job.start_time}, finish={py_job.finish_time}"
+                    )
+
+                py_job.actual_runtime = max(0.0, runtime)
             self._running_jobs.remove(py_job)
             self._completed_jobs.append(py_job)
             self._resource.release(py_job.requested_resources)
-            self._events.append(Event(EventType.JOB_COMPLETED, self._internal_time, job=py_job))
+            self._events.append(Event(EventType.JOB_COMPLETED, py_job.finish_time, job=py_job))
             if self._batsim_verbose:
                 n_done = len(self._completed_jobs)
                 n_total = n_done + len(self._running_jobs) + len(self._pending_jobs)
-                print(f"  [BatSim t={self._internal_time:7.1f}] JOB_DONE    #{py_job.job_id:3d} | wait={py_job.waiting_time:.1f}s | run={py_job.actual_runtime:.1f}s | done={n_done}/{n_total}", flush=True)
+                print(f"  [BatSim t={py_job.finish_time:7.1f}] JOB_DONE    #{py_job.job_id:3d} | wait={py_job.waiting_time:.1f}s | run={py_job.actual_runtime:.1f}s | done={n_done}/{n_total}", flush=True)
         self._needs_wakeup = True
 
     def onNoMoreEvents(self) -> None:

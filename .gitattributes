@@ -1,1 +1,2 @@
 *.sh text eol=lf
+pybatgym_viz/bin/python text eol=lf
