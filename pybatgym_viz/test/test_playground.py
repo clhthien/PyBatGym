@@ -161,3 +161,9 @@ def test_log_is_escaped_and_tail_is_bounded(web):
     assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
     payload = client.get('/playground/runs/' + path.name + '/status').get_json()
     assert len(payload['stdout'].encode()) <= 65536
+
+
+def test_health_does_not_expose_paths_or_secrets(web):
+    _, client, _ = web
+    payload = client.get('/playground/health').get_json()
+    assert payload == {'status': 'ok', 'execution_mode': 'local', 'e2e_workspace': False, 'artifact_schema': 1}

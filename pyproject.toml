@@ -28,6 +28,10 @@ rl = [
     "stable-baselines3>=2.0.0",
     "sb3-contrib>=2.0.0",
 ]
+e2e = [
+    "pytest>=8.0,<10",
+    "playwright>=1.56,<2",
+]
 all = ["pybatgym[dev,rl]"]
 
 [tool.setuptools.packages.find]
@@ -37,3 +41,4 @@ include = ["pybatgym*"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --tb=short"
+markers = ["e2e: opt-in real-browser tests against the isolated local E2E workspace"]

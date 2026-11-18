@@ -18,6 +18,10 @@ build/
 # ── Logs & outputs ─────────────────────────────────────────
 logs/
 runs/playground/
+runs/e2e/
+.venv-e2e/
+.e2e-cache/
+test-results/
 *.log
 batsim_out*
 

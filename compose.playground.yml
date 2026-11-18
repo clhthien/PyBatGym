@@ -19,3 +19,25 @@ services:
       PYBATGYM_PLAYGROUND_HOME: "1"
       PYBATGYM_RUNS_DIR: /workspace/runs/playground
     mem_limit: 1g
+
+  playground-e2e:
+    profiles: [e2e]
+    image: ghcr.io/clhthien/pybatgym:latest
+    pull_policy: never
+    init: true
+    working_dir: /workspace
+    entrypoint: ["/opt/venv/bin/python", "/workspace/pybatgym_viz/start_local.py"]
+    volumes:
+      - .:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:5051:5050"
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: /workspace
+      PYBATGYM_EXECUTION_MODE: local
+      PYBATGYM_PLAYGROUND_HOME: "1"
+      PYBATGYM_RUNS_DIR: /workspace/runs/e2e
+      PYBATGYM_E2E_WORKSPACE: "1"
+    mem_limit: 1g

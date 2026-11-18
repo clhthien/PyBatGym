@@ -1,6 +1,10 @@
 # ── Python ─────────────────────────────────────────────────────────────────
 __pycache__/
 runs/playground/
+runs/e2e/
+.venv-e2e/
+.e2e-cache/
+test-results/
 *.py[cod]
 *$py.class
 *.pyo

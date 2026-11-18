@@ -1,5 +1,7 @@
 # Stage 3 — Scheduling Playground (ứng dụng Passenger cho OOD)
 
+**Stage 4 local đã có:** xem `E2E-TEST-CASES.md` và chạy `scripts/test_e2e.ps1` để kiểm chứng full luồng local bằng trình duyệt thật trên workspace riêng cổng 5051.
+
 ## Mở bản local
 
 Mở **http://localhost:5050/**. Trang tự chuyển sang đường dẫn mô phỏng OOD `/pun/dev/pybatgym_playground/playground/`.

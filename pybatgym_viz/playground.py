@@ -32,6 +32,7 @@ def initialize(app):
     root.mkdir(parents=True, exist_ok=True)
     app.config.update(PLAYGROUND_RUNS_ROOT=root,
                       PLAYGROUND_EXECUTION_MODE=os.environ.get('PYBATGYM_EXECUTION_MODE', 'disabled'),
+                      PLAYGROUND_E2E_WORKSPACE=os.environ.get('PYBATGYM_E2E_WORKSPACE') == '1',
                       MAX_CONTENT_LENGTH=16 * 1024, SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE='Lax')
     # Stable across Passenger workers/restarts, outside the public artifact allowlist.
     secret_file = root / '.web-session-key'
@@ -216,6 +217,14 @@ def download(run_id, artifact):
         abort(404)
     path = safe_file(run_dir(run_id), artifact)
     return send_file(path, as_attachment=True, download_name=f'{run_id}-{path.name}', conditional=True)
+
+
+@bp.get('/health')
+def health():
+    # No paths, secrets, user identity, or Docker controls exposed here.
+    return jsonify(status='ok', execution_mode=current_app.config['PLAYGROUND_EXECUTION_MODE'],
+                   e2e_workspace=current_app.config['PLAYGROUND_E2E_WORKSPACE'],
+                   artifact_schema=1)
 
 
 @bp.after_request
