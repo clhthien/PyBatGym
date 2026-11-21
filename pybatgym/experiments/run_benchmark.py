@@ -145,7 +145,7 @@ def _set_batsim_workload(path: str) -> None:
 # ── One episode ─────────────────────────────────────────────────────────────
 
 def run_episode(cfg, policy: Callable, policy_label: str, workload_path: str, seed: int,
-                run_id: str, step_w, job_w, adapter_factory=None) -> dict[str, Any]:
+                run_id: str, step_w, job_w, adapter_factory=None, progress=None) -> dict[str, Any]:
     workload = Path(workload_path).stem
     env = PyBatGymEnv(config=cfg, adapter=adapter_factory(cfg) if adapter_factory else None)
     try:
@@ -183,6 +183,8 @@ def run_episode(cfg, policy: Callable, policy_label: str, workload_path: str, se
             ])
             step += 1
             done = terminated or truncated
+            if progress is not None:
+                progress(env, policy_label, seed, done)
 
         completed = env._adapter.get_completed_jobs()
         for j in sorted(completed, key=lambda j: j.job_id):
@@ -250,7 +252,7 @@ def print_table(rows: list[dict]) -> None:
 
 # ── Main ────────────────────────────────────────────────────────────────────
 
-def main(argv: Optional[list[str]] = None, *, adapter_factory=None) -> Path:
+def main(argv: Optional[list[str]] = None, *, adapter_factory=None, progress=None) -> Path:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--preset", default="medium_batsim", help="tên file trong configs/ (không có .yaml)")
     ap.add_argument("--config", help="đường dẫn file YAML (ưu tiên hơn --preset)")
@@ -306,7 +308,7 @@ def main(argv: Optional[list[str]] = None, *, adapter_factory=None) -> Path:
                     cfg.workload.seed = seed
                     if args.backend == "real" and adapter_factory is None:
                         _set_batsim_workload(wl)
-                    m = run_episode(cfg, policy, label, wl, seed, run_id, step_w, job_w, adapter_factory)
+                    m = run_episode(cfg, policy, label, wl, seed, run_id, step_w, job_w, adapter_factory, progress)
                     ok = m["completed_jobs"] == m["expected_jobs"] and m["terminated"] == 1
                     print("[%s] %-12s %-22s seed=%d  jobs=%d/%d  wait=%.1f  util=%.3f  makespan=%.0f  steps=%d  invalid=%d%s" % (
                         "OK " if ok else "WARN", label, Path(wl).stem, seed, m["completed_jobs"], m["expected_jobs"],

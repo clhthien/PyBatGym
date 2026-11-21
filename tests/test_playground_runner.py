@@ -4,6 +4,26 @@ import os
 from pathlib import Path
 
 import pytest
+
+
+@pytest.mark.parametrize('count', [1000, 10000])
+@pytest.mark.parametrize('backend', ['mock', 'real'])
+def test_large_demo_configuration_resolves(count, backend):
+    from pybatgym.runner.config import REPO, Request, resolve
+    request = Request.model_validate_json(
+        (REPO / f'configs/playground/{backend}_{count}.json').read_text()
+    )
+    cfg, hashes = resolve(request)
+    workload = json.loads((REPO / f'data/workloads/{request.workload}.json').read_text())
+    serial_bound = max(j['subtime'] for j in workload['jobs']) + sum(
+        workload['profiles'][j['profile']]['delay'] for j in workload['jobs']
+    )
+    assert cfg['workload']['num_jobs'] == count
+    assert cfg['episode']['max_simulation_time'] > serial_bound
+    assert cfg['episode']['max_steps'] == count * 20
+    if backend == 'real':
+        assert cfg['platform']['platform_path'].endswith('medium_platform.xml')
+        assert 'data/platforms/medium_platform.xml' in hashes
 from pydantic import ValidationError
 
 from pybatgym.runner import run

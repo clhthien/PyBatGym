@@ -1,0 +1,26 @@
+[
+  {
+    "directory": "F:\\DACN\\Code\\DATN\\PyBatGym\\runs\\playground\\20261121T080044-9f81ec3deb91",
+    "sha256": {
+      "results\\per_episode_metrics.csv": "f40af51c2bc554cc5ff6af3e14597b8786e6779abb5430dd97031b777e88d5bb",
+      "results\\jobs.csv": "61114daae3daf81792ae4b022bdb804aa6ccbcabf7f675fa57c10fef6d048708",
+      "verification.json": "038ecbfe3059a31588eef5c31238d9684b8a12941813b215eb838f53364d926a"
+    }
+  },
+  {
+    "directory": "F:\\DACN\\Code\\DATN\\PyBatGym\\runs\\playground\\20261121T190121-6f75ce0d836c",
+    "sha256": {
+      "results\\per_episode_metrics.csv": "df00acd3f14bb09090c96f4b20e53fa8af902f1bd1f1a77b5e8011d7d623debe",
+      "results\\jobs.csv": "db7b831515830a2a47bdb7cc3a28e402b4b1a000688fa4dc31e7ac48d3415cf1",
+      "verification.json": "559c39aa11832d398dadb4e84100e79dfeb0e4a7e6d96358e9a764d100801d0e"
+    }
+  },
+  {
+    "directory": "F:\\DACN\\Code\\DATN\\PyBatGym\\runs\\playground\\20261119T154030-82db4fee7e16",
+    "sha256": {
+      "results\\per_episode_metrics.csv": "665f5be35bfcfce123f2bf814e9991a10ca1eac92fc622428292db4ee7b1e5cc",
+      "results\\jobs.csv": "eddbf887100572376fce4cde68ca12577de0ac2a7d72cdea8320bcd86f851829",
+      "verification.json": "fb5dffd52b00f252b5ce4f7c2f6d40c1b9198bbacf1ef1c339953779f9af3f97"
+    }
+  }
+]

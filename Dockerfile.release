@@ -1,0 +1,18 @@
+# Incremental release over the immutable, locally verified environment.
+# This is not a clean Ubuntu/PyPI rebuild of the training stack.
+FROM pybatgym-release-base:f35b3ef759ed
+RUN /opt/venv/bin/python -c "import shutil; from pathlib import Path; p=Path('/workspace'); shutil.rmtree(p); p.mkdir()"
+WORKDIR /workspace
+COPY release/web.lock.txt /opt/pybatgym-release/web.lock.txt
+RUN /opt/venv/bin/python -m pip install --no-cache-dir -r /opt/pybatgym-release/web.lock.txt && /opt/venv/bin/python -m pip check
+COPY pybatgym /workspace/pybatgym
+COPY pybatgym_viz /workspace/pybatgym_viz
+COPY configs /workspace/configs
+COPY data/platforms /workspace/data/platforms
+COPY data/workloads/gen_c32_s0.json data/workloads/gen_c32_n1000_s0.json data/workloads/gen_c32_n10000_s0.json /workspace/data/workloads/
+COPY tests /workspace/tests
+COPY README.md RUNNER.md pyproject.toml /workspace/
+COPY release /workspace/release
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PYTHONPATH=/workspace
+RUN /opt/venv/bin/python /workspace/release/manifest.py write && /opt/venv/bin/python -m pip freeze --exclude-editable > /opt/pybatgym-release/environment.txt
+ENTRYPOINT ["/opt/venv/bin/python", "/workspace/release/start.py"]

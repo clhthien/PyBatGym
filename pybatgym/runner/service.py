@@ -113,8 +113,8 @@ def run(config, output_root=None, *, _prepared=None) -> Path:
         error_code = 'RUNTIME_ERROR'
         with RealLock() if request.backend == 'real' else nullcontext():
             if request.backend == 'real':
-                from .docker_runtime import prepare
-                runtime = prepare(REPO, run_dir)
+                from .runtime import backend
+                runtime = backend().prepare(REPO, run_dir)
                 write_json(run_dir / 'runtime.json', runtime)
             command = [sys.executable, '-u', '-m', 'pybatgym.runner.worker', str(run_dir)]
             env = os.environ.copy()
@@ -146,7 +146,8 @@ def run(config, output_root=None, *, _prepared=None) -> Path:
                     metadata['worker_exit_code'] = child.returncode
                     write_json(run_dir / 'metadata.json', metadata)
                 if runtime:
-                    from .docker_runtime import cleanup
+                    from .runtime import backend
+                    cleanup = backend(runtime.get('kind', 'docker')).cleanup
                     pending_exception = sys.exc_info()[0] is not None
                     try:
                         cleanup(runtime, run_dir)

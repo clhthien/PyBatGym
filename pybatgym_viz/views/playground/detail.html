@@ -1,15 +1,92 @@
 {% extends "playground/base.html" %}
 {% block title %}{{ run.run_id }}{% endblock %}
 {% block content %}
+{% if run.slurm %}<div class="notice">Slurm job <strong>{{ run.slurm.job_id }}</strong> · {{ run.slurm.scheduler_state or 'SUBMITTED' }} · PASS chỉ được ghi sau kiểm chứng output.</div>{% endif %}
+<a class="button secondary" href="{{ url_for('playground.dashboard', run_id=run.run_id) }}">◫ Mở dashboard · Live /
+    Replay</a>
 <a class="back-link" href="{{ url_for('playground.home') }}">← Tất cả thí nghiệm</a>
-<div class="page-intro detail-intro"><div><div class="eyebrow">EXPERIMENT DETAILS</div><h1>{{ run.workload or 'Thí nghiệm' }}</h1><p class="mono run-id">{{ run.run_id }}</p></div><span class="badge large {{ run.state|lower }}" id="run-state">{{ run.label }}</span></div>
-<div id="run-monitor" data-status-url="{{ url_for('playground.status', run_id=run.run_id) }}" data-terminal="{{ 'true' if terminal else 'false' }}"></div>
+<div class="page-intro detail-intro">
+    <div>
+        <div class="eyebrow">EXPERIMENT DETAILS</div>
+        <h1>{{ run.workload or 'Thí nghiệm' }}</h1>
+        <p class="mono run-id">{{ run.run_id }}</p>
+    </div><span class="badge large {{ run.state|lower }}" id="run-state">{{ run.label }}</span>
+</div>
+<div id="run-monitor" data-status-url="{{ url_for('playground.status', run_id=run.run_id) }}"
+    data-terminal="{{ 'true' if terminal else 'false' }}"></div>
 <div id="poll-error" class="notice" hidden>Chưa cập nhật được trạng thái. Đang thử lại…</div>
-{% if run.status.error %}<div class="notice error" role="alert"><strong>{{ run.status.error_code }}</strong><br>{{ run.status.error }}</div>{% endif %}
-<div class="summary-grid"><div class="summary-card"><span>BACKEND</span><strong>{{ 'BatSim' if run.backend == 'real' else 'Mock' }}</strong></div><div class="summary-card"><span>POLICIES</span><strong>{{ run.policies|join(' · ')|upper }}</strong></div><div class="summary-card"><span>KẾT QUẢ KIỂM CHỨNG</span><strong class="{{ 'success-text' if run.state == 'SUCCEEDED' else '' }}">{{ 'PASS' if run.state == 'SUCCEEDED' and verification.status == 'PASS' else 'Chưa đạt' if terminal else 'Đang chờ' }}</strong></div><div class="summary-card"><span>KHỞI TẠO</span><strong class="time-value"><time datetime="{{ run.created_at }}">{{ run.created_at }}</time></strong></div></div>
-{% if run.state == 'SUCCEEDED' %}<div class="notice success"><strong>Thí nghiệm hoàn tất và đã được kiểm chứng.</strong> {% if verification.job_rows %}{{ verification.job_rows }} dòng dữ liệu job đã được kiểm tra.{% endif %}</div>{% elif not terminal %}<div class="notice"><span class="online-dot"></span> Thí nghiệm chạy trong nền. Trang tự cập nhật; bạn có thể quay lại bằng run ID.</div>{% endif %}
-<section class="panel"><div class="section-heading"><div><h2>Kết quả so sánh</h2><p>Chỉ dùng kết quả PASS để diễn giải chất lượng policy.</p></div>{% if 'results/comparison_table.csv' in downloads %}<a class="button secondary" href="{{ url_for('playground.download', run_id=run.run_id, artifact='results/comparison_table.csv') }}">Tải CSV ↓</a>{% endif %}</div>
-{% if metrics %}<div class="table-scroll"><table><thead><tr><th>Policy</th><th>Waiting time (s)</th><th>Bounded slowdown</th><th>Utilization</th><th>Makespan (s)</th><th>Chưa hoàn tất</th></tr></thead><tbody>{% for row in metrics %}<tr><td><strong>{{ row.policy }}</strong></td><td>{{ '%.3f'|format(row.avg_waiting_time_mean|float) }}</td><td>{{ '%.3f'|format(row.avg_bounded_slowdown_mean|float) }}</td><td>{{ '%.2f'|format((row.utilization_mean|float)*100) }}%</td><td>{{ '%.3f'|format(row.makespan_mean|float) }}</td><td>{{ row.n_incomplete }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state compact">Kết quả sẽ xuất hiện khi benchmark hoàn tất.</div>{% endif %}</section>
-<div class="detail-grid"><section class="panel"><div class="section-heading"><div><h2>Log thực thi</h2><p>Hiển thị tối đa 64 KiB cuối mỗi log.</p></div><span class="count">LIVE OUTPUT</span></div><div class="log-label">STDOUT</div><pre class="log" id="stdout-log">{{ stdout or 'Đang chờ log…' }}</pre><details {% if stderr %}open{% endif %}><summary>Thông tin lỗi / stderr</summary><pre class="log error-log" id="stderr-log">{{ stderr or 'Chưa ghi nhận thông tin lỗi.' }}</pre></details></section>
-<aside class="panel"><div class="section-heading"><h2>Dữ liệu của run</h2></div><div class="download-list">{% for artifact in downloads %}<a href="{{ url_for('playground.download', run_id=run.run_id, artifact=artifact) }}"><span>{{ artifact }}</span><span>↓</span></a>{% endfor %}</div><div class="panel-note">File kết quả đang chạy có thể chưa đầy đủ. Mỗi run được lưu riêng và không ghi đè run trước.</div></aside></div>
+{% if run.status.error %}<div class="notice error" role="alert"><strong>{{ run.status.error_code }}</strong><br>{{
+    run.status.error }}</div>{% endif %}
+<div class="summary-grid">
+    <div class="summary-card"><span>BACKEND</span><strong>{{ 'BatSim' if run.backend == 'real' else 'Mock' }}</strong>
+    </div>
+    <div class="summary-card"><span>POLICIES</span><strong>{{ run.policies|join(' · ')|upper }}</strong></div>
+    <div class="summary-card"><span>KẾT QUẢ KIỂM CHỨNG</span><strong
+            class="{{ 'success-text' if run.state == 'SUCCEEDED' else '' }}">{{ 'PASS' if run.state == 'SUCCEEDED' and
+            verification.status == 'PASS' else 'Chưa đạt' if terminal else 'Đang chờ' }}</strong></div>
+    <div class="summary-card"><span>KHỞI TẠO</span><strong class="time-value"><time datetime="{{ run.created_at }}">{{
+                run.created_at }}</time></strong></div>
+</div>
+{% if run.state == 'SUCCEEDED' %}<div class="notice success"><strong>Thí nghiệm hoàn tất và đã được kiểm chứng.</strong>
+    {% if verification.job_rows %}{{ verification.job_rows }} dòng dữ liệu job đã được kiểm tra.{% endif %}</div>{% elif
+not terminal %}<div class="notice"><span class="online-dot"></span> Thí nghiệm chạy trong nền. Trang tự cập nhật; bạn có
+    thể quay lại bằng run ID.</div>{% endif %}
+<section class="panel">
+    <div class="section-heading">
+        <div>
+            <h2>Kết quả so sánh</h2>
+            <p>Chỉ dùng kết quả PASS để diễn giải chất lượng policy.</p>
+        </div>{% if 'results/comparison_table.csv' in downloads %}<a class="button secondary"
+            href="{{ url_for('playground.download', run_id=run.run_id, artifact='results/comparison_table.csv') }}">Tải
+            CSV ↓</a>{% endif %}
+    </div>
+    {% if metrics %}<div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Policy</th>
+                    <th>Waiting time (s)</th>
+                    <th>Bounded slowdown</th>
+                    <th>Utilization</th>
+                    <th>Makespan (s)</th>
+                    <th>Chưa hoàn tất</th>
+                </tr>
+            </thead>
+            <tbody>{% for row in metrics %}<tr>
+                    <td><strong>{{ row.policy }}</strong></td>
+                    <td>{{ '%.3f'|format(row.avg_waiting_time_mean|float) }}</td>
+                    <td>{{ '%.3f'|format(row.avg_bounded_slowdown_mean|float) }}</td>
+                    <td>{{ '%.2f'|format((row.utilization_mean|float)*100) }}%</td>
+                    <td>{{ '%.3f'|format(row.makespan_mean|float) }}</td>
+                    <td>{{ row.n_incomplete }}</td>
+                </tr>{% endfor %}</tbody>
+        </table>
+    </div>{% else %}<div class="empty-state compact">Kết quả sẽ xuất hiện khi benchmark hoàn tất.</div>{% endif %}
+</section>
+<div class="detail-grid">
+    <section class="panel">
+        <div class="section-heading">
+            <div>
+                <h2>Log thực thi</h2>
+                <p>Hiển thị tối đa 64 KiB cuối mỗi log.</p>
+            </div><span class="count">LIVE OUTPUT</span>
+        </div>
+        <div class="log-label">STDOUT</div>
+        <pre class="log" id="stdout-log">{{ stdout or 'Đang chờ log…' }}</pre>
+        <details {% if stderr %}open{% endif %}>
+            <summary>Thông tin lỗi / stderr</summary>
+            <pre class="log error-log" id="stderr-log">{{ stderr or 'Chưa ghi nhận thông tin lỗi.' }}</pre>
+        </details>
+    </section>
+    <aside class="panel">
+        <div class="section-heading">
+            <h2>Dữ liệu của run</h2>
+        </div>
+        <div class="download-list">{% for artifact in downloads %}<a
+                href="{{ url_for('playground.download', run_id=run.run_id, artifact=artifact) }}"><span>{{ artifact
+                    }}</span><span>↓</span></a>{% endfor %}</div>
+        <div class="panel-note">File kết quả đang chạy có thể chưa đầy đủ. Mỗi run được lưu riêng và không ghi đè run
+            trước.</div>
+    </aside>
+</div>
 {% endblock %}

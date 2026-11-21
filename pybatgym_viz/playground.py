@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import math
 
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, send_file, session, url_for
 from pybatgym.runner.config import REPO, Request, resolve
@@ -22,6 +23,7 @@ STATE_LABELS = {'CREATED': 'Đã tạo', 'QUEUED': 'Đã tiếp nhận', 'VALIDA
 DOWNLOADS = {'request.json', 'config_resolved.json', 'status.json', 'verification.json',
              'stdout.log', 'stderr.log', 'results/comparison_table.csv', 'results/per_episode_metrics.csv',
              'results/jobs.csv', 'results/steps.csv', 'results/benchmark_summary.csv'}
+_WORKLOAD_CATALOG = {}
 
 
 def initialize(app):
@@ -78,11 +80,17 @@ def safe_file(directory, relative):
 
 def tail(directory, relative):
     path = directory / relative
-    if not path.is_file() or not path.resolve().is_relative_to(directory.resolve()):
-        return ''
-    with path.open('rb') as f:
-        f.seek(max(0, path.stat().st_size - 64 * 1024))
-        return f.read().decode('utf-8', errors='replace')
+    try:
+        if not path.is_file() or not path.resolve().is_relative_to(directory.resolve()):
+            return ''
+        with path.open('rb') as f:
+            f.seek(max(0, path.stat().st_size - 64 * 1024))
+            return f.read().decode('utf-8', errors='replace')
+    except OSError:
+        # Docker Desktop's Windows bind mount can transiently return ENODATA
+        # while the worker appends to a log. Keep status polling usable; the
+        # next poll retries the read and the durable log remains unchanged.
+        return 'Tạm thời chưa đọc được log. Hệ thống sẽ thử lại ở lần cập nhật tiếp theo.'
 
 
 def catalog():
@@ -96,19 +104,34 @@ def catalog():
             continue
     workloads = []
     for path in sorted((REPO / 'data/workloads').glob('*.json')):
-        value = read_json(path, {})
-        if value.get('nb_res') in {p['cores'] for p in presets} and value.get('jobs'):
-            workloads.append({'id': path.stem, 'cores': value['nb_res'], 'jobs': len(value['jobs'])})
+        stat = path.stat()
+        # The runner accepts <=100k jobs. Do not load the experimental 1M-job
+        # file into a 1 GiB web worker merely to render the launcher catalog.
+        if stat.st_size > 64 * 1024 * 1024:
+            continue
+        signature = (stat.st_mtime_ns, stat.st_size)
+        cached = _WORKLOAD_CATALOG.get(str(path))
+        if not cached or cached[0] != signature:
+            value = read_json(path, {})
+            cached = (signature, {'id': path.stem, 'cores': value.get('nb_res'), 'jobs': len(value.get('jobs', []))})
+            _WORKLOAD_CATALOG[str(path)] = cached
+        value = cached[1]
+        if value['cores'] in {p['cores'] for p in presets} and 0 < value['jobs'] <= 100000:
+            workloads.append(value)
     return presets, workloads
 
 
 def run_summary(directory):
+    slurm = None
+    if current_app.config['PLAYGROUND_EXECUTION_MODE'] == 'slurm':
+        from pybatgym.runner.slurm import reconcile
+        slurm = reconcile(directory)
     status = read_json(directory / 'status.json', {})
     config = read_json(directory / 'request.json') or read_json(directory / 'submission.json', {})
     return {'run_id': directory.name, 'state': status.get('state', 'CREATED'),
             'label': STATE_LABELS.get(status.get('state'), 'Chưa xác định'),
             'created_at': status.get('created_at', ''), 'backend': config.get('backend', ''),
-            'workload': config.get('workload', ''), 'policies': config.get('policies', []), 'status': status}
+            'workload': config.get('workload', ''), 'policies': config.get('policies', []), 'status': status, 'slurm': slurm}
 
 
 def recent_runs():
@@ -134,7 +157,7 @@ def show_form(values=None, error=None, code=200):
     values = values or Request().model_dump(mode='json')
     return render_template('playground/home.html', values=values, presets=presets, workloads=workloads,
                            recent=recent_runs(), error=error, csrf=session['csrf'], launch_token=secrets.token_hex(24),
-                           execution_enabled=current_app.config['PLAYGROUND_EXECUTION_MODE'] == 'local'), code
+                           execution_enabled=current_app.config['PLAYGROUND_EXECUTION_MODE'] in ('local', 'slurm')), code
 
 
 @bp.route('/', methods=['GET', 'POST'])
@@ -144,7 +167,7 @@ def home():
     token = request.form.get('csrf_token', '')
     if not token or not hmac.compare_digest(token, session.get('csrf', '')):
         abort(400, 'Phiên biểu mẫu đã hết hạn. Hãy tải lại trang.')
-    if current_app.config['PLAYGROUND_EXECUTION_MODE'] != 'local':
+    if current_app.config['PLAYGROUND_EXECUTION_MODE'] not in ('local', 'slurm'):
         return show_form(error='Khởi chạy local chưa được bật trong môi trường này.', code=503)
     launch_token = request.form.get('launch_token', '')
     if not re.fullmatch(r'[a-f0-9]{48}', launch_token):
@@ -203,12 +226,47 @@ def status(run_id):
     summary = run_summary(directory)
     payload = {key: summary[key] for key in ('run_id', 'state', 'label')}
     payload.update(terminal=summary['state'] in TERMINAL, updated_at=summary['status'].get('updated_at'),
+                   slurm=summary.get('slurm'),
                    history=summary['status'].get('history', []), error=summary['status'].get('error'),
                    error_code=summary['status'].get('error_code'), stdout=tail(directory, 'stdout.log'),
                    stderr=tail(directory, 'stderr.log'))
     response = jsonify(payload)
     response.headers['Cache-Control'] = 'no-store'
     return response
+
+
+@bp.get('/runs/<run_id>/dashboard')
+def dashboard(run_id):
+    directory = run_dir(run_id)
+    summary = run_summary(directory)
+    return render_template('playground/dashboard.html', run=summary)
+
+
+@bp.get('/runs/<run_id>/dashboard/data')
+def dashboard_data(run_id):
+    from dashboard_data import projection
+    try:
+        fraction = float(request.args.get('position', '1'))
+        if not math.isfinite(fraction) or not 0 <= fraction <= 1:
+            abort(400)
+    except ValueError:
+        abort(400)
+    directory = run_dir(run_id)
+    run_summary(directory)  # Reconcile scheduler termination during live polling.
+    return jsonify(projection(directory, request.args.get('episode'), fraction))
+
+
+@bp.get('/runs/<run_id>/dashboard/jobs')
+def dashboard_jobs(run_id):
+    from dashboard_data import job_page
+    try:
+        page = int(request.args.get('page', '1'))
+        if not 1 <= page <= 100000:
+            abort(400)
+    except ValueError:
+        abort(400)
+    return jsonify(job_page(run_dir(run_id), request.args.get('episode', ''), page,
+                            request.args.get('q', '')[:64]))
 
 
 @bp.get('/runs/<run_id>/download/<path:artifact>')

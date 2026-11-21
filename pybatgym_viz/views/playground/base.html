@@ -11,10 +11,9 @@
   <aside class="sidebar">
     <a class="brand" href="{{ url_for('playground.home') }}"><span class="brand-icon">P<span>↗</span></span><span>PyBatGym<small>SCHEDULING LAB</small></span></a>
     <div class="sidebar-label">KHÔNG GIAN NGHIÊN CỨU</div>
-    <a class="nav-item active" href="{{ url_for('playground.home') }}"><span>▦</span> Playground</a>
-    <a class="nav-item" href="{{ url_for('episodes') }}"><span>≋</span> Kết quả benchmark cũ</a>
-    <a class="nav-item" href="{{ url_for('comparison') }}"><span>⌁</span> TensorBoard comparison</a>
-    <div class="sidebar-bottom"><span class="online-dot"></span> Local workspace<small>Chuẩn bị cho Open OnDemand</small></div>
+    <a class="nav-item{% if request.endpoint == 'playground.home' %} active{% endif %}" href="{{ url_for('playground.home') }}"><span>▦</span> Playground</a>
+    {% if run is defined %}<a class="nav-item{% if request.endpoint == 'playground.dashboard' %} active{% endif %}" href="{{ url_for('playground.dashboard', run_id=run.run_id) }}"><span>⌁</span> Dashboard</a><a class="nav-item{% if request.endpoint == 'playground.detail' %} active{% endif %}" href="{{ url_for('playground.detail', run_id=run.run_id) }}"><span>≋</span> Log & dữ liệu</a>{% endif %}
+    <div class="sidebar-bottom"><span class="online-dot"></span> Local workspace<small>Mock / BatSim</small></div>
   </aside>
   <div class="workspace">
     <header class="topbar"><span>Scheduling Policy <span class="muted">/</span> Playground</span><span class="environment">LOCAL EXPERIMENTS</span></header>

@@ -1,0 +1,101 @@
+{
+  "exit_code": 0,
+  "tests": [
+    {
+      "test": "test_dashboard_live_then_replay_real",
+      "outcome": "passed",
+      "duration_seconds": 30.446202600000106,
+      "error": null
+    },
+    {
+      "test": "test_tc01_form_and_ood_prefix",
+      "outcome": "passed",
+      "duration_seconds": 1.2574042999985977,
+      "error": null
+    },
+    {
+      "test": "test_tc02_mock_launch_to_verified_results",
+      "outcome": "passed",
+      "duration_seconds": 7.2602600999998685,
+      "error": null
+    },
+    {
+      "test": "test_tc03_real_launch_logs_csv_and_native_exports",
+      "outcome": "passed",
+      "duration_seconds": 27.952255800000785,
+      "error": null
+    },
+    {
+      "test": "test_tc04_missing_policy_is_rejected",
+      "outcome": "passed",
+      "duration_seconds": 1.8361628000002383,
+      "error": null
+    },
+    {
+      "test": "test_tc05_workload_platform_mismatch_blocks_launch",
+      "outcome": "passed",
+      "duration_seconds": 1.1501737999988109,
+      "error": null
+    },
+    {
+      "test": "test_tc06_duplicate_post_creates_only_one_run",
+      "outcome": "passed",
+      "duration_seconds": 4.394068100000368,
+      "error": null
+    },
+    {
+      "test": "test_tc07_real_timeout_is_visible_and_cleaned_up",
+      "outcome": "passed",
+      "duration_seconds": 4.900829899999735,
+      "error": null
+    },
+    {
+      "test": "test_tc08_second_real_run_reports_busy_without_interference",
+      "outcome": "passed",
+      "duration_seconds": 15.61324219999915,
+      "error": null
+    },
+    {
+      "test": "test_tc09_close_and_reopen_page_keeps_run",
+      "outcome": "passed",
+      "duration_seconds": 7.057074499998635,
+      "error": null
+    },
+    {
+      "test": "test_tc10_repeat_runs_have_separate_immutable_output",
+      "outcome": "passed",
+      "duration_seconds": 8.938144400000965,
+      "error": null
+    },
+    {
+      "test": "test_tc11_csrf_and_download_boundaries",
+      "outcome": "passed",
+      "duration_seconds": 4.838188099998661,
+      "error": null
+    },
+    {
+      "test": "test_tc12_mobile_form_remains_usable",
+      "outcome": "passed",
+      "duration_seconds": 1.2081656000009389,
+      "error": null
+    },
+    {
+      "test": "test_tc13_unknown_run_has_no_data_leak",
+      "outcome": "passed",
+      "duration_seconds": 1.2428767999990669,
+      "error": null
+    },
+    {
+      "test": "test_tc14_tampered_input_rejected_server_side",
+      "outcome": "passed",
+      "duration_seconds": 2.4300464000007196,
+      "error": null
+    },
+    {
+      "test": "test_tc15_temporary_browser_disconnect_recovers",
+      "outcome": "passed",
+      "duration_seconds": 5.274780600000668,
+      "error": null
+    }
+  ]
+}

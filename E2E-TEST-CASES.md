@@ -39,6 +39,7 @@ Chrome headless → form dưới OOD prefix → POST Launch/CSRF/idempotency
 | TC13 | Truy vấn run ID không tồn tại hoặc sai định dạng | 404, không lộ dữ liệu |
 | TC14 | Bỏ qua client validation, POST workload `../secret` | Server từ chối 400 và không tạo run |
 | TC15 | Launch → ngắt mạng riêng browser context → nối lại | Hiện cảnh báo polling, runner tiếp tục; UI tự cập nhật lại tới SUCCEEDED khi có kết nối |
+| TC16 | Launch Real → Dashboard Live → Replay, chọn episode, kéo thời gian, phân trang và mobile | Snapshot worker RSS/core map đo thật, core map khớp busy cores; PASS; Replay native allocation, không lỗi JS hoặc tràn ngang |
 
 Kiểm tra filesystem trong suite chỉ đọc output thuộc `runs/e2e/` để đối chiếu native CSV/container state và xác nhận không ghi đè. Không sửa/xóa dữ liệu người dùng.
 
@@ -51,7 +52,7 @@ cd F:\DACN\Code\DATN\PyBatGym
 & .\scripts\test_e2e.ps1
 ```
 
-Script tự tạo/tái sử dụng `.venv-e2e`, cài dependency test, khởi động riêng service E2E và chạy 15 test. Không khởi động lại Docker Desktop hoặc các service khác; không build/push/pull image. Nếu thiếu image/runtime, cần sửa môi trường trước.
+Script tự tạo/tái sử dụng `.venv-e2e`, cài dependency test, khởi động riêng service E2E và chạy 16 test. Không khởi động lại Docker Desktop hoặc các service khác; không build/push/pull image. Nếu thiếu image/runtime, cần sửa môi trường trước.
 
 Sau lần đầu có thể bỏ bước cài dependency:
 
@@ -119,3 +120,16 @@ Ngày 14/11/2026: 14 test đầu đạt trong 140.26 giây; TC15 kiểm tra bổ
 - https://playwright.dev/python/docs/intro
 - https://playwright.dev/python/docs/browsers
 - https://playwright.dev/python/docs/trace-viewer
+
+## Cập nhật visualization
+
+Ngày 22/11/2026: lượt đầu 15/16 E2E đạt, phát hiện status HTTP 500 do đọc log
+đang ghi qua Docker Desktop Windows bind mount trả ENODATA. Đã sửa API để giữ
+trạng thái và hiển thị thông báo log tạm thời; thêm regression kiểm tra phục hồi.
+Lượt cuối **16/16 E2E PASS, 134,93 giây** tại
+`test-results/e2e-20261122-020335-814/`; **86/86 regression PASS, 16,00 giây**.
+Ảnh và báo cáo tóm tắt đã lưu ở `demo/20261122/`. Các mốc dưới đây là lịch sử.
+
+Ngày 20/11/2026: bộ 16 E2E gồm dashboard đạt PASS; đây là mốc trước lần tinh gọn UI/tài liệu. Kết quả sau tinh gọn đọc report mới trong test-results. Các lệnh chạy chính được chốt ở [RUNNER.md](RUNNER.md), ý nghĩa giao diện ở [pybatgym_viz/README.md](pybatgym_viz/README.md).
+
+Sau tinh gọn ngày 20/11/2026: **16/16 E2E PASS** trong 161,18 giây, báo cáo `test-results/e2e-20261120-095111-303/`. **76/76 regression PASS** trong 49,76 giây. Chrome đã kiểm tra riêng redirect trang cũ, menu mới, ẩn/hiện seed Random, ẩn worker panel khi thiếu dữ liệu và mở giải thích dashboard; không có lỗi JavaScript. Dashboard run 10.000 job đã kiểm tra desktop/mobile, không tràn ngang trang. Không xóa dữ liệu run, model hoặc log.

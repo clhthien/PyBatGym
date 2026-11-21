@@ -3,6 +3,7 @@ __pycache__/
 runs/playground/
 runs/e2e/
 .venv-e2e/
+.venv-report/
 .e2e-cache/
 test-results/
 *.py[cod]
@@ -46,6 +47,11 @@ htmlcov/
 *.swp
 *.swo
 *~
+~$*.docx
+
+# Oversized exploratory workloads are generated on demand, outside demo inputs.
+data/workloads/gen_c32_n100000_s0.json
+data/workloads/gen_c32_n1000000_s0.json
 
 # ── OS ─────────────────────────────────────────────────────────────────────
 .DS_Store

@@ -33,6 +33,27 @@ def form(client, **changes):
             'policies': ['fcfs', 'sjf'], 'seed': '0', 'random_seeds': '1', 'timeout_seconds': '120', **changes}
 
 
+def test_status_survives_transient_bind_mount_log_read_error(web, monkeypatch):
+    _, client, runs = web
+    directory = allocate(runs)
+    Status(directory, resume=True).set('RUNNING')
+    original_open = Path.open
+
+    def flaky_open(path, *args, **kwargs):
+        if path == directory / 'stdout.log' and args and args[0] == 'rb':
+            raise OSError(61, 'No data available')
+        return original_open(path, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(Path, 'open', flaky_open)
+        response = client.get(f'/playground/runs/{directory.name}/status')
+        assert response.status_code == 200
+        assert response.json['state'] == 'RUNNING'
+        assert 'Tạm thời chưa đọc được log' in response.json['stdout']
+    (directory / 'stdout.log').write_text('Recovered log')
+    assert client.get(f'/playground/runs/{directory.name}/status').json['stdout'] == 'Recovered log'
+
+
 def test_passenger_prefix_applies_to_links_forms_and_polling(web):
     _, client, directory = web
     prefix = '/pun/dev/pybatgym_playground'

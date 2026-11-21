@@ -1,4 +1,10 @@
-# hpcc/ – chạy PyBatGym trên HPCC Portal (SuperNodeXP)
+# HPCC — runner Slurm và script khảo sát
+
+Luồng HPC cũ/thử nghiệm, không chạy trên Windows. Không dùng script này chứng minh dashboard đã tích hợp Slurm. Runner mới yêu cầu Python >=3.10; workaround PYTHONPATH trên Python 3.9 của Mock cũ không bảo đảm runner mới tương thích. Bản local xem [RUNNER.md](../RUNNER.md).
+
+Cập nhật 21/11/2026: Python 3.10.22 đã kiểm chứng qua job 8151; BatSim smoke đạt ở job 8157; runner mới qua Slurm đạt PASS ở job 8158 với FCFS/SJF, mỗi policy 100 job. Xem [hướng dẫn runner Slurm và bằng chứng](SLURM-RUNNER.md). UI chưa được cài vào menu OOD; cần quyền Sandbox hoặc quản trị triển khai app.
+
+Các script bên dưới thuộc luồng khảo sát cũ, không phải lệnh chạy runner mới.
 
 | File | Chạy ở đâu | Việc |
 |---|---|---|

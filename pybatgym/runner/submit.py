@@ -16,6 +16,9 @@ def reap():
 
 
 def submit(config, output_root=None) -> Path:
+    if os.environ.get('PYBATGYM_EXECUTION_MODE') == 'slurm':
+        from .slurm import submit as submit_slurm
+        return submit_slurm(config, output_root)
     request = Request.model_validate(config)
     resolve(request)  # Invalid forms do not spawn processes or create a run.
     directory = allocate(output_root)

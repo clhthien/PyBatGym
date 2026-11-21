@@ -1,0 +1,15 @@
+services:
+  playground-release:
+    image: ghcr.io/clhthien/pybatgym:local-20261120
+    pull_policy: never
+    init: true
+    volumes:
+      - ${PYBATGYM_RELEASE_WORKSPACE:?Export the image workspace first}:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:5052:5050"
+    environment:
+      PYBATGYM_EXECUTION_MODE: local
+      PYBATGYM_RUNS_DIR: /workspace/runs/playground
+      PYBATGYM_PLAYGROUND_HOME: "1"
+    mem_limit: 1g

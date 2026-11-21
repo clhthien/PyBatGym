@@ -443,7 +443,10 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
         if self._batsim_verbose:
             import sys
             print(f"\n  [BatSim] Simulation begins — {self.bs.nb_compute_resources} cores, verbose ON", flush=True)
-        self._state_queue.put("READY")
+        # Only onNoMoreEvents may release the agent: it then blocks waiting
+        # for the matching action. A separate READY token lets reset return
+        # while the scheduler is still mutating the state and leaves WAKEUP
+        # queued for step(), breaking the one-state/one-action handshake.
 
     def onBeforeEvents(self) -> None:
         self._internal_time = float(self.bs.time())

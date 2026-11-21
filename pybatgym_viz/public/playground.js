@@ -6,6 +6,10 @@ const form = document.getElementById('launch-form');
 if (form) {
   const workload = document.getElementById('workload'), preset = document.getElementById('preset');
   const button = document.getElementById('launch-button');
+  const randomField = document.getElementById('random-seed-field');
+  const randomPolicy = form.querySelector('input[name=policies][value=random]');
+  const toggleRandom = () => { if(randomField) randomField.hidden = !randomPolicy.checked; };
+  randomPolicy.addEventListener('change', toggleRandom); toggleRandom();
   const check = () => {
     const mismatch = workload.selectedOptions[0]?.dataset.cores !== preset.selectedOptions[0]?.dataset.cores;
     document.getElementById('compatibility').hidden = !mismatch;

@@ -69,11 +69,14 @@ def owned(container, run_id):
 
 def log_text(payload):
     chunks = []
-    while len(payload) >= 8 and payload[0] in (0, 1, 2) and payload[1:4] == b'\x00\x00\x00':
-        length = struct.unpack('>I', payload[4:8])[0]
-        chunks.append(payload[8:8 + length])
-        payload = payload[8 + length:]
-    chunks.append(payload)
+    offset = 0
+    # Walk Docker frames without copying the entire remaining log each time.
+    # Large experiments have many small frames, making repeated slicing O(n²).
+    while len(payload) - offset >= 8 and payload[offset] in (0, 1, 2) and payload[offset + 1:offset + 4] == b'\x00\x00\x00':
+        length = struct.unpack_from('>I', payload, offset + 4)[0]
+        chunks.append(payload[offset + 8:offset + 8 + length])
+        offset += 8 + length
+    chunks.append(payload[offset:])
     return b''.join(chunks).decode('utf-8', errors='replace')
 
 

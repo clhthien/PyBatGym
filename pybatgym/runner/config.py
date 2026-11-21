@@ -73,7 +73,11 @@ def resolve(request: Request) -> tuple[dict, dict]:
     hashes = {str(workload_path.relative_to(REPO)): hashlib.sha256(workload_path.read_bytes()).hexdigest(),
               str(preset_path.relative_to(REPO)): hashlib.sha256(preset_path.read_bytes()).hexdigest()}
     if request.backend == 'real':
-        platform = inside(REPO / 'data/platforms' / (request.preset.removesuffix('_batsim') + '_platform.xml'), REPO / 'data/platforms')
+        platform_name = {
+            'medium_1000_batsim': 'medium',
+            'medium_10000_batsim': 'medium',
+        }.get(request.preset, request.preset.removesuffix('_batsim'))
+        platform = inside(REPO / 'data/platforms' / (platform_name + '_platform.xml'), REPO / 'data/platforms')
         # Existing presets medium_batsim/small_batsim map to their platform files.
         count = sum(h.get('id') != 'master_host' for h in ET.parse(platform).iter('host'))
         if count != cfg.platform.total_cores:

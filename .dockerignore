@@ -20,6 +20,7 @@ logs/
 runs/playground/
 runs/e2e/
 .venv-e2e/
+.venv-report/
 .e2e-cache/
 test-results/
 *.log
@@ -42,3 +43,10 @@ Thumbs.db
 
 # ── Git ────────────────────────────────────────────────────
 .git/
+
+# Reports and exploratory data are not runtime dependencies.
+*.docx
+review.zip
+scratch/
+data/workloads/gen_c32_n100000_s0.json
+data/workloads/gen_c32_n1000000_s0.json

@@ -1,0 +1,24 @@
+{
+  "run_id": "20261120T163028-b6e68c84fefe",
+  "state": "SUCCEEDED",
+  "verification": {
+    "status": "PASS",
+    "episodes": [
+      {
+        "policy": "FCFS",
+        "seed": 0,
+        "completed_jobs": 100,
+        "native_max_error_seconds": 0.0003700000000037562
+      },
+      {
+        "policy": "SJF",
+        "seed": 0,
+        "completed_jobs": 100,
+        "native_max_error_seconds": 0.0003399999999942338
+      }
+    ],
+    "job_rows": 200,
+    "backend": "real"
+  },
+  "browser_errors": []
+}

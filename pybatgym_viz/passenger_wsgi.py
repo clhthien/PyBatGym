@@ -11,7 +11,7 @@ from werkzeug.utils import redirect  # noqa: E402
 
 
 def application(environ, start_response):
-    # Launching the OOD app opens its playground, while legacy viz routes stay available.
+    # Launching the app always opens the scheduling playground.
     if environ.get('PATH_INFO', '/') in ('', '/'):
         destination = environ.get('SCRIPT_NAME', '').rstrip('/') + '/playground/'
         return redirect(destination)(environ, start_response)
