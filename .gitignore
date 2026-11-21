@@ -13,6 +13,7 @@ test-results/
 .Python
 batsim_data
 docs
+*.docx
 
 # ── Distribution / packaging ───────────────────────────────────────────────
 *.egg
