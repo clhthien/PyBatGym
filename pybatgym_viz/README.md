@@ -42,9 +42,13 @@ Launch tạo ID mới, không ghi đè. Đóng tab không dừng runner. Web ch�
 | Job explorer | Tìm ID, 25 dòng/trang; timestamp tính bằng giây mô phỏng |
 | Cách đọc dashboard | Giải thích ngay trong UI, mở khi cần |
 
-Waiting time = start − submit. p95: 95% job chờ không vượt giá trị này. Makespan: thời gian tới khi episode hoàn tất. Bounded slowdown: mức chậm so với runtime với ngưỡng bảo vệ job ngắn. Waiting/slowdown/makespan thấp hơn thường tốt hơn; cần xem workload và các chỉ số còn lại.
+Waiting time = start − submit (giây mô phỏng). Cam là trung bình = tổng thời gian chờ / số job; xanh là p95 theo nearest-rank: sắp xếp N thời gian chờ rồi lấy phần tử thứ ceil(0,95 × N). Với 100 job, đây là giá trị thứ 95, ít nhất 95 job chờ không quá ngưỡng đó. p95 không phải giá trị lớn nhất; cũng không luôn lớn hơn trung bình nếu có ngoại lệ rất lớn. Hai thanh được vẽ riêng, có nhãn và số cụ thể.
 
-Replay tổng hợp event submit/start/finish. Biểu đồ dài lấy mẫu khoảng 900 điểm, giữ đỉnh queue/busy theo bucket; KPI con trỏ dùng event gốc. Timeline tự thu cửa sổ, tối đa 2.500 đoạn; không dựng allocation giả khi thiếu dữ liệu. API job phân trang, cache tối đa 4 run. Live đọc 2 MiB gần nhất của progress.jsonl; run dài có thể thiếu đầu series Live, Replay cuối vẫn dùng jobs.csv.
+Đồng hồ mô phỏng và thời gian máy tính chạy là hai đồng hồ khác nhau. 4.817,8 giây mô phỏng là khoảng 1 giờ 20 phút trong hệ thống giả lập; simulator có thể tính xong trong vài giây thực vì nhảy từ sự kiện này sang sự kiện khác, không chờ hết thời gian job. Không đổi số đó thành ms. Makespan hiện là đồng hồ kết thúc tính từ gốc episode (bao gồm khoảng trống trước job đầu), throughput là job/giây mô phỏng. Timeout, tuổi snapshot và elapsed là giây thực. Log mới ghi s_sim/s_wall; results/units.json và units.json mô tả đơn vị các trường CSV, giữ nguyên schema và số liệu lịch sử.
+
+Replay tổng hợp event submit/start/finish. Biểu đồ dài lấy mẫu khoảng 900 điểm, giữ đỉnh queue/busy theo bucket; KPI con trỏ dùng event gốc. Timeline mặc định xem toàn episode. Có thể chọn chi tiết quanh con trỏ; nếu có quá nhiều thanh, chế độ toàn episode tổng hợp tỷ lệ bận trong các ô thời gian (tối đa 2.500 ô), không bỏ các core ở đầu lịch sử. Ô tổng hợp không phải job và tooltip ghi rõ tỷ lệ bận. Dữ liệu thiếu native allocation không được dựng giả. Live chỉ là snapshot hiện tại, không phải lịch sử. API job phân trang, cache tối đa 4 run. Live đọc 2 MiB gần nhất của progress.jsonl; run dài có thể thiếu đầu series Live, Replay cuối vẫn dùng jobs.csv.
+
+Ví dụ run 20261124T025647-c71d1571a2ec: FCFS từng sử dụng cả 32 core. Giao diện cũ mặc định nhìn đoạn cuối 4.721,465–4.817,821 giây mô phỏng, khi chỉ còn c17/c18 hoạt động. Đây là giới hạn cửa sổ hiển thị, không phải 30 core chưa từng được cấp job.
 
 Snapshot >8 giây được đánh dấu chậm cập nhật. Run kết thúc thì CPU/RAM là mẫu cuối có timestamp. Chưa có health probe từng dịch vụ; đã bỏ panel pipeline suy trạng thái để tránh hiểu nhầm.
 

@@ -15,6 +15,7 @@ import uuid
 from .config import REPO, Request, resolve
 from .storage import RealLock, Status, now, write_json
 from .verify import verify
+from pybatgym.time_units import TIME_UNITS
 
 
 def git(*args):
@@ -74,6 +75,7 @@ def run(config, output_root=None, *, _prepared=None) -> Path:
         if status.value['state'] != 'QUEUED':
             raise ValueError('Prepared run is not queued')
     run_id = run_dir.name
+    write_json(run_dir / 'units.json', TIME_UNITS)
     request = None
     runtime = None
     child = None
@@ -132,7 +134,7 @@ def run(config, output_root=None, *, _prepared=None) -> Path:
                     except subprocess.TimeoutExpired:
                         terminal_state = 'TIMED_OUT'
                         error_code = 'TIMEOUT'
-                        raise RuntimeError(f'Exceeded {request.timeout_seconds} seconds') from None
+                        raise RuntimeError(f'Exceeded {request.timeout_seconds} wall-clock seconds (s_wall)') from None
                 metadata['worker_exit_code'] = return_code
                 write_json(run_dir / 'metadata.json', metadata)
                 if return_code != 0:

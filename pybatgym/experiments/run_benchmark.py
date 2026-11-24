@@ -40,6 +40,7 @@ from pybatgym.config.loader import load_config, load_preset
 from pybatgym.core import ScheduleCommandType
 from pybatgym.envs import PyBatGymEnv
 from pybatgym.plugins.benchmark_logger import BenchmarkLogger
+from pybatgym.time_units import TIME_UNITS
 
 POLICY_LABELS = {
     "fcfs": "FCFS",
@@ -238,7 +239,7 @@ def write_comparison(path: Path, episodes: list[dict]) -> list[dict]:
 
 
 def print_table(rows: list[dict]) -> None:
-    head = ["policy", "workloads", "incomplete", "avg_wait (s)", "bounded_sd", "util", "makespan (s)"]
+    head = ["policy", "workloads", "incomplete", "avg_wait (s_sim)", "bounded_sd", "util", "makespan (s_sim)"]
     print("\n" + " | ".join("%-14s" % h for h in head))
     for r in rows:
         print(" | ".join("%-14s" % v for v in [
@@ -277,6 +278,9 @@ def main(argv: Optional[list[str]] = None, *, adapter_factory=None, progress=Non
     if out.exists() and any(out.iterdir()):
         raise SystemExit("Thư mục %s đã có dữ liệu. Chọn --out khác để không trộn kết quả." % out)
     out.mkdir(parents=True, exist_ok=True)
+    (out / 'units.json').write_text(json.dumps(TIME_UNITS, indent=2), encoding='utf-8')
+    print('[Units] s_sim = simulation seconds; s_wall = elapsed real seconds. '
+          'Simulation clocks can advance much faster than wall-clock time.', flush=True)
 
     first_cfg = _make_config(args, files[0])
     plat = "%dx%d" % (first_cfg.platform.total_nodes, first_cfg.platform.cores_per_node)
@@ -310,7 +314,7 @@ def main(argv: Optional[list[str]] = None, *, adapter_factory=None, progress=Non
                         _set_batsim_workload(wl)
                     m = run_episode(cfg, policy, label, wl, seed, run_id, step_w, job_w, adapter_factory, progress)
                     ok = m["completed_jobs"] == m["expected_jobs"] and m["terminated"] == 1
-                    print("[%s] %-12s %-22s seed=%d  jobs=%d/%d  wait=%.1f  util=%.3f  makespan=%.0f  steps=%d  invalid=%d%s" % (
+                    print("[%s] %-12s %-22s seed=%d  jobs=%d/%d  wait=%.1f s_sim  util=%.3f  makespan=%.0f s_sim  steps=%d  invalid=%d%s" % (
                         "OK " if ok else "WARN", label, Path(wl).stem, seed, m["completed_jobs"], m["expected_jobs"],
                         m["avg_waiting_time"], m["utilization"], m["makespan"], m["num_steps"],
                         m["invalid_actions"], "" if ok else "  <-- episode không hoàn tất"))

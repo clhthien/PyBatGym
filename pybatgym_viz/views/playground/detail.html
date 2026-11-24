@@ -35,7 +35,7 @@ not terminal %}<div class="notice"><span class="online-dot"></span> Thí nghiệ
     <div class="section-heading">
         <div>
             <h2>Kết quả so sánh</h2>
-            <p>Chỉ dùng kết quả PASS để diễn giải chất lượng policy.</p>
+            <p>Thời gian trong bảng là giây mô phỏng, không phải thời gian máy tính chạy. Chỉ dùng kết quả PASS để diễn giải chất lượng policy.</p>
         </div>{% if 'results/comparison_table.csv' in downloads %}<a class="button secondary"
             href="{{ url_for('playground.download', run_id=run.run_id, artifact='results/comparison_table.csv') }}">Tải
             CSV ↓</a>{% endif %}
@@ -45,10 +45,10 @@ not terminal %}<div class="notice"><span class="online-dot"></span> Thí nghiệ
             <thead>
                 <tr>
                     <th>Policy</th>
-                    <th>Waiting time (s)</th>
+                    <th>Waiting trung bình (s mô phỏng)</th>
                     <th>Bounded slowdown</th>
                     <th>Utilization</th>
-                    <th>Makespan (s)</th>
+                    <th>Makespan (s mô phỏng)</th>
                     <th>Chưa hoàn tất</th>
                 </tr>
             </thead>
@@ -68,7 +68,7 @@ not terminal %}<div class="notice"><span class="online-dot"></span> Thí nghiệ
         <div class="section-heading">
             <div>
                 <h2>Log thực thi</h2>
-                <p>Hiển thị tối đa 64 KiB cuối mỗi log.</p>
+                <p>s_sim hoặc t=… trong log BatSim là giây mô phỏng; s_wall/timeout là giây thực. Log gốc simulator cũng dùng thời gian mô phỏng. Hiển thị 64 KiB cuối; tải file để xem đầy đủ.</p>
             </div><span class="count">LIVE OUTPUT</span>
         </div>
         <div class="log-label">STDOUT</div>

@@ -196,9 +196,9 @@ class _CompetitiveCallback(BaseCallback):
                 f"  [{self.num_timesteps:>9,}] "
                 f"eps={self._n_episodes:>4}  "
                 f"win_rate={win_rate:.0%}  "
-                f"avg_wait={avg_wait:.1f}  "
-                f"SJF_wait={self.sjf_wait:.1f}  "
-                f"t={elapsed:.0f}s"
+                f"avg_wait={avg_wait:.1f} s_sim  "
+                f"SJF_wait={self.sjf_wait:.1f} s_sim  "
+                f"wall_elapsed={elapsed:.0f} s_wall"
             )
 
         if win_rate >= self.win_rate_threshold:
@@ -216,7 +216,7 @@ class _CompetitiveCallback(BaseCallback):
                 f"\n{'='*70}\n"
                 f"[TARGET REACHED] Mock PPO beats SJF!\n"
                 f"  Win rate  : {win_rate:.1%}\n"
-                f"  avg_wait  : {avg_wait:.2f}s vs SJF={self.sjf_wait:.2f}s\n"
+                f"  avg_wait  : {avg_wait:.2f} s_sim vs SJF={self.sjf_wait:.2f} s_sim\n"
                 f"  util      : {recent_util:.1%}\n"
                 f"  Episodes  : {self._n_episodes}\n"
                 f"{'='*70}"
@@ -276,7 +276,7 @@ def validate_on_real(model: PPO, real_config: PyBatGymConfig, num_episodes: int 
                 busy = sum(j.actual_runtime * j.requested_resources for j in completed)
                 utils.append(busy / (makespan * tc))
             rewards.append(ep_reward)
-            print(f"    ep {ep+1}: wait={waits[-1]:.1f}s  util={utils[-1] if utils else 0:.1%}  reward={ep_reward:.2f}")
+            print(f"    ep {ep+1}: wait={waits[-1]:.1f} s_sim  util={utils[-1] if utils else 0:.1%}  reward={ep_reward:.2f}")
     except Exception as exc:
         print(f"  [Real validation] Failed: {exc}")
         return {}
@@ -322,12 +322,12 @@ def main() -> None:
 
     sjf_wait = sjf_m["avg_waiting_time"]
     sjf_util = sjf_m["avg_utilization"]
-    print(f"  FCFS  wait={fcfs_m['avg_waiting_time']:.1f}  sd={fcfs_m['avg_slowdown']:.2f}  util={fcfs_m['avg_utilization']:.1%}")
-    print(f"  SJF   wait={sjf_wait:.1f}  sd={sjf_m['avg_slowdown']:.2f}  util={sjf_util:.1%}")
-    print(f"  EASY  wait={easy_m['avg_waiting_time']:.1f}  sd={easy_m['avg_slowdown']:.2f}  util={easy_m['avg_utilization']:.1%}")
+    print(f"  FCFS  wait={fcfs_m['avg_waiting_time']:.1f} s_sim  sd={fcfs_m['avg_slowdown']:.2f}  util={fcfs_m['avg_utilization']:.1%}")
+    print(f"  SJF   wait={sjf_wait:.1f} s_sim  sd={sjf_m['avg_slowdown']:.2f}  util={sjf_util:.1%}")
+    print(f"  EASY  wait={easy_m['avg_waiting_time']:.1f} s_sim  sd={easy_m['avg_slowdown']:.2f}  util={easy_m['avg_utilization']:.1%}")
     if sjf_util < 0.05:
         print(f"  ⚠️  SJF util={sjf_util:.1%} is suspiciously low (< 5%). Check workload/platform sizing.")
-    print(f"\n  → PPO target: win_rate > 80% vs SJF wait={sjf_wait:.1f}s  util >= {sjf_util*0.8:.1%}")
+    print(f"\n  → PPO target: win_rate > 80% vs SJF wait={sjf_wait:.1f} s_sim  util >= {sjf_util*0.8:.1%}")
 
     # ── Create envs ─────────────────────────────────────────────────────────
     print("\n[2/5] Creating Mock training env...")
@@ -408,7 +408,7 @@ def main() -> None:
 
     model.save(save_path)
     print(f"\n  Final model : {save_path}.zip")
-    print(f"  Training    : {train_time:.0f}s ({train_time/60:.1f} min)")
+    print(f"  Training    : {train_time:.0f} s_wall ({train_time/60:.1f} min)")
     print(f"  Steps       : {model.num_timesteps:,}")
     print(f"  Episodes    : {competitive_cb._n_episodes}")
     print(f"  Best Mock win rate vs SJF: {competitive_cb._best_win_rate:.1%}")
@@ -425,7 +425,7 @@ def main() -> None:
         print(f"{'─'*70}")
         print(f"  {'Metric':<28} | {'Mock SJF':>10} | {'PPO (Real)':>12}")
         print(f"{'─'*70}")
-        print(f"  {'Avg Waiting Time (s)':<28} | {sjf_wait:>10.2f} | {real_m['avg_waiting_time']:>12.2f}")
+        print(f"  {'Avg Waiting Time (s_sim)':<28} | {sjf_wait:>10.2f} | {real_m['avg_waiting_time']:>12.2f}")
         print(f"  {'Avg Slowdown':<28} | {sjf_m['avg_slowdown']:>10.2f} | {real_m['avg_slowdown']:>12.2f}")
         print(f"  {'Avg Utilization (%)':<28} | {sjf_m['avg_utilization']:>9.1%}  | {real_m['avg_utilization']:>11.1%}")
         print(f"{'='*70}")

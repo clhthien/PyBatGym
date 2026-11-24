@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from dashboard_data import projection, job_page
+from dashboard_data import projection, job_page, core_timeline
 
 
 def write(path, value):
@@ -35,7 +35,7 @@ def fixture_run(tmp_path):
 
 def test_replay_uses_event_sweep_and_native_core_allocation(tmp_path):
     d=fixture_run(tmp_path)
-    value=projection(d,'FCFS:0',.5)
+    value=projection(d,'FCFS:0',.5,'window')
     assert value['verified'] and value['snapshot']==dict(t=2.,queued=1,running=1,completed=0,busy=2)
     assert {s['core'] for s in value['timeline']}=={0,1}
     end=projection(d,'FCFS:0',1)
@@ -43,6 +43,32 @@ def test_replay_uses_event_sweep_and_native_core_allocation(tmp_path):
     assert end['comparison'][0]['p95_wait']==5
     assert end['comparison'][0]['mean_wait']==3.5
     assert len(job_page(d,'FCFS:0',1,'1')['jobs'])==1
+
+
+def test_default_timeline_keeps_all_cores_not_only_last_jobs(tmp_path):
+    d=fixture_run(tmp_path)
+    full=projection(d,'FCFS:0',1)
+    assert full['window']==[0.,8.]
+    assert {s['core'] for s in full['timeline']}=={0,1,2,3}
+    assert full['used_cores']==[0,1,2,3]
+    assert full['time_units']['simulation']=='seconds'
+    assert full['time_units']['elapsed']=='wall_clock_seconds'
+    assert full['comparison'][0]['mean_wait']==3.5  # No divide-by-1000 conversion.
+
+
+def test_large_overview_bins_preserve_busy_time_on_every_core():
+    jobs=[dict(id=str(i),start=float(i),finish=float(i+1),allocation=[0,3]) for i in range(6)]
+    mode, segments=core_timeline(jobs,4,0.,10.,limit=4)
+    assert mode=='density' and len(segments)<=4
+    assert {s['core'] for s in segments}=={0,3}
+    assert sum((s['finish']-s['start'])*s['busy_fraction'] for s in segments)==pytest.approx(12.)
+    assert all('id' not in s for s in segments)  # Occupancy is not a fake job.
+
+
+def test_timeline_density_unions_overlapping_native_intervals():
+    jobs=[dict(id=str(i),start=1.,finish=4.,allocation=[0]) for i in range(3)]
+    mode, segments=core_timeline(jobs,1,0.,10.,limit=1)
+    assert mode=='density' and segments[0]['busy_fraction']==pytest.approx(.3)
 
 
 def test_failed_run_never_gets_pass_from_leftover_verification(tmp_path):
@@ -68,6 +94,7 @@ def test_dashboard_routes_prefix_validation_and_pagination(tmp_path, monkeypatch
     html=client.get(base,environ_overrides={'SCRIPT_NAME':'/pun/dev/test'}).get_data(as_text=True)
     assert 'data-url="/pun/dev/test'+base+'/data"' in html
     assert client.get(base+'/data?position=nan').status_code==400
+    assert client.get(base+'/data?timeline_view=invalid').status_code==400
     assert client.get(base+'/jobs?page=0').status_code==400
     assert client.get(base+'/data?position=.5').json['snapshot']['busy']==2
     assert client.get('/playground/runs/invalid/dashboard/data').status_code==404

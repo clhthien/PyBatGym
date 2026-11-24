@@ -38,7 +38,7 @@ class WorkloadConfig(BaseModel):
     source: str = Field(default="synthetic", pattern=r"^(synthetic|trace)$")
     trace_path: Optional[str] = None
     num_jobs: int = Field(default=100, gt=0)
-    max_job_runtime: float = Field(default=100.0, gt=0)
+    max_job_runtime: float = Field(default=100.0, gt=0, description='Simulation seconds')
     max_job_cores: int = Field(default=4, gt=0)
     seed: int = Field(default=42)
 
@@ -46,7 +46,7 @@ class WorkloadConfig(BaseModel):
 class EpisodeConfig(BaseModel):
     """Episode lifecycle configuration."""
 
-    max_simulation_time: float = Field(default=10000.0, gt=0)
+    max_simulation_time: float = Field(default=10000.0, gt=0, description='Simulation seconds, not elapsed computer time')
     max_steps: int = Field(default=500, gt=0)
 
 
@@ -55,7 +55,7 @@ class ObservationConfig(BaseModel):
 
     top_k_jobs: int = Field(default=10, gt=0, le=50)
     max_queue_length: int = Field(default=200, gt=0)
-    max_waiting_time: float = Field(default=1000.0, gt=0)
+    max_waiting_time: float = Field(default=1000.0, gt=0, description='Simulation seconds; observation normalization scale')
     max_bounded_slowdown: float = Field(default=100.0, gt=0)
 
 

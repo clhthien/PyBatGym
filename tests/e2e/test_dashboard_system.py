@@ -33,8 +33,27 @@ def test_dashboard_live_then_replay_real(case):
     value=case.context.request.get(base+'/data?episode=FCFS:0&position=.5').json()
     assert value['verified'] and value['source']=='replay'
     assert value['jobs_count']==100 and value['native_allocation']
+    assert value['time_units']['simulation']=='seconds'
+    assert value['time_units']['elapsed']=='wall_clock_seconds'
+    assert value['window']==[0,value['horizon']]
+    assert set(value['used_cores'])==set(range(value['cores']))
+    assert {s['core'] for s in value['timeline']}==set(range(value['cores']))
+    assert value['horizon']>1000 and value['elapsed']<120  # Separate clocks, no ms conversion.
     assert len(value['series'])<=903
     assert len(value['timeline'])<=2500
+    assert '95%' in case.page.locator('#waiting-explanation').inner_text()
+    assert 'giây thực' in case.page.locator('#time-explanation').inner_text()
+    dashboard_theme=case.page.evaluate('getComputedStyle(document.body).backgroundColor')
+    other=case.context.new_page()
+    other.goto(case.home)
+    assert other.evaluate('getComputedStyle(document.body).backgroundColor')==dashboard_theme
+    other.goto(case.home+'runs/'+run_id)
+    assert other.evaluate('getComputedStyle(document.body).backgroundColor')==dashboard_theme
+    other.close()
+    case.page.select_option('#timeline-view','window')
+    case.page.wait_for_function("document.querySelector('#timeline-note').textContent.startsWith('Cửa sổ')")
+    case.page.select_option('#timeline-view','full')
+    case.page.wait_for_function("document.querySelector('#timeline-note').textContent.startsWith('Toàn episode')")
     case.page.select_option('#dash-episode','SJF:0')
     case.page.wait_for_function("document.querySelector('#dash-jobs').children.length===25")
     case.page.locator('#job-next').click()

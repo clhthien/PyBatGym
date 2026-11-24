@@ -138,7 +138,46 @@ def sampled(points, limit=900):
     return output
 
 
-def projection(directory, episode=None, fraction=1.0):
+def core_timeline(jobs, cores, lo, hi, limit=2500):
+    """Exact job intervals when small; bounded occupancy bins for full overviews.
+
+    A density bin stores the fraction of that time bin really occupied by native
+    allocations. It is not a synthetic job and must not get a job-ID tooltip.
+    """
+    visible = [j for j in jobs if j['start'] < hi and j['finish'] > lo]
+    count = sum(len(j['allocation']) for j in visible)
+    if count <= limit:
+        return 'jobs', [dict(core=c, id=j['id'], start=j['start'], finish=j['finish'])
+                        for j in visible for c in j['allocation']]
+    bins = max(1, limit // max(1, cores))
+    width = max(.000001, hi - lo) / bins
+    by_core = [[] for _ in range(cores)]
+    for job in visible:
+        for core in job['allocation']:
+            by_core[core].append((max(lo, job['start']), min(hi, job['finish'])))
+    output = []
+    for core, intervals in enumerate(by_core):
+        # Union intervals first: overlapping records never double-count busy time.
+        merged = []
+        for start, finish in sorted(intervals):
+            if merged and start <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], finish))
+            else:
+                merged.append((start, finish))
+        busy = [0.] * bins
+        for start, finish in merged:
+            first = max(0, min(bins - 1, int((start - lo) / width)))
+            last = max(0, min(bins - 1, int((finish - lo) / width)))
+            for index in range(first, last + 1):
+                a, b = lo + index * width, lo + (index + 1) * width
+                busy[index] += max(0., min(finish, b) - max(start, a))
+        output.extend(dict(core=core, start=lo+i*width, finish=lo+(i+1)*width,
+                           busy_fraction=min(1., duration/width))
+                      for i, duration in enumerate(busy) if duration > 0)
+    return 'density', output
+
+
+def projection(directory, episode=None, fraction=1.0, timeline_view='full'):
     data = dataset(directory)
     status = read_json(directory, 'status.json', {})
     request = read_json(directory, 'request.json', {})
@@ -173,7 +212,9 @@ def projection(directory, episode=None, fraction=1.0):
                    episodes=[dict(key=g['key'], policy=g['policy'], seed=g['seed']) for g in groups.values()],
                    history=status.get('history', []), live=live, live_age=live_age,
                    comparison=[dict(policy=g['policy'],seed=g['seed'],mean_wait=g['mean_wait'],p95_wait=g['p95_wait'], **g.get('metrics', {})) for g in groups.values()],
-                   series=[], timeline=[], jobs_count=0, source='waiting', sampled=False)
+                   series=[], timeline=[], jobs_count=0, source='waiting', sampled=False,
+                   time_units={'simulation':'seconds', 'elapsed':'wall_clock_seconds', 'live_age':'wall_clock_seconds'},
+                   percentile_method='nearest_rank', timeline_view=timeline_view)
     if selected:
         points = selected['points']
         horizon = points[-1]['t']
@@ -183,17 +224,20 @@ def projection(directory, episode=None, fraction=1.0):
         span = max(.001, horizon*.04)
         # Narrow the viewport rather than silently dropping allocations and
         # making busy cores appear idle in the right half of the chart.
-        for _ in range(32):
-            lo, hi = max(0,cursor-span/2), min(horizon,cursor+span/2)
-            visible = [j for j in jobs if j['start'] <= hi and j['finish'] >= lo]
-            if sum(len(j['allocation']) for j in visible) <= 2500:
-                break
-            span /= 2
-        segments = [dict(core=core,id=j['id'],start=j['start'],finish=j['finish'])
-                    for j in visible for core in j['allocation']][:2500]
+        lo, hi = 0., horizon
+        if timeline_view == 'window':
+            for _ in range(32):
+                lo, hi = max(0,cursor-span/2), min(horizon,cursor+span/2)
+                visible = [j for j in jobs if j['start'] < hi and j['finish'] > lo]
+                if sum(len(j['allocation']) for j in visible) <= 2500:
+                    break
+                span /= 2
+        mode, segments = core_timeline(jobs, data['cores'], lo, hi)
+        used_cores = sorted({c for j in jobs for c in j['allocation']})
         payload.update(source='replay',selected=selected['key'],policy=selected['policy'],seed=selected['seed'],
                        series=sampled(points), sampled=len(points)>900, cursor=cursor, horizon=horizon,
-                       snapshot=state,timeline=segments,window=[lo,hi],timeline_limited=len(segments)>=2500,
+                       snapshot=state,timeline=segments,window=[lo,hi],timeline_limited=mode=='density',
+                       timeline_mode=mode, used_cores=used_cores,
                        jobs_count=len(jobs),native_allocation=any(j['allocation'] for j in jobs))
     # New runs have measured worker snapshots. Old runs remain Replay-only.
     if not terminal and live and (not episode or episode == f"{live.get('policy')}:{live.get('seed')}"):
@@ -214,7 +258,7 @@ def projection(directory, episode=None, fraction=1.0):
         payload.update(source='live',policy=live['policy'],seed=live['seed'],selected=f"{live['policy']}:{live['seed']}",
                        snapshot=dict(t=live['sim_time'],queued=live['queued'],running=live['running'],completed=live['completed'],busy=live['busy']),
                        series=sampled(points),cursor=live['sim_time'],horizon=live['sim_time'],timeline=[],native_allocation=False,
-                       live_core_map=live.get('core_map', []))
+                       live_core_map=live.get('core_map', []), timeline_mode='snapshot')
     return payload
 
 

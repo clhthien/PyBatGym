@@ -91,7 +91,7 @@ def main():
         return f"{val:.2f}"
         
     metrics_to_print = [
-        ("Avg Waiting Time (s)", "avg_waiting_time", "avg_waiting_time"),
+        ("Avg Waiting Time (s_sim)", "avg_waiting_time", "avg_waiting_time"),
         ("Avg Slowdown", "avg_slowdown", "avg_slowdown"),
         ("Avg Utilization (%)", "avg_utilization", "avg_utilization"),
     ]

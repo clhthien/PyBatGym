@@ -144,12 +144,12 @@ class _MockEpisodeDiagnosticsCallback(BaseCallback):
             print(
                 f"  [Mock ep {self._n_episodes:>4}] "
                 f"completed={completed_count}/{self.expected_jobs} {status:<10} "
-                f"makespan={makespan:>8.2f}s  "
-                f"avg_wait={avg_wait:>8.2f}s  "
+                f"makespan={makespan:>8.2f} s_sim  "
+                f"avg_wait={avg_wait:>8.2f} s_sim  "
                 f"util={util:>6.1%}  "
                 f"reward={total_reward:>+10.4f}  "
                 f"steps={step:>8,}  "
-                f"t={elapsed:.0f}s"
+                f"wall_elapsed={elapsed:.0f} s_wall"
             )
 
     def _on_training_end(self) -> None:
@@ -256,7 +256,7 @@ def validate_on_real(model: MaskablePPO, real_config: PyBatGymConfig, num_episod
             utils.append(util)
             sds.append(avg_sd)
             rewards.append(ep_reward)
-            print(f"    ep {ep+1}: wait={waits[-1]:.1f}s  util={utils[-1] if utils else 0:.1%}  reward={ep_reward:.2f}")
+            print(f"    ep {ep+1}: wait={waits[-1]:.1f} s_sim  util={utils[-1] if utils else 0:.1%}  reward={ep_reward:.2f}")
     except Exception as exc:
         print(f"  [Real validation] Failed: {exc}")
         return {}
@@ -322,12 +322,12 @@ def main() -> None:
 
     sjf_wait = sjf_m["avg_waiting_time"]
     sjf_util = sjf_m["avg_utilization"]
-    print(f"  FCFS  wait={fcfs_m['avg_waiting_time']:.1f}  sd={fcfs_m['avg_slowdown']:.2f}  util={fcfs_m['avg_utilization']:.1%}")
-    print(f"  SJF   wait={sjf_wait:.1f}  sd={sjf_m['avg_slowdown']:.2f}  util={sjf_util:.1%}")
-    print(f"  EASY  wait={easy_m['avg_waiting_time']:.1f}  sd={easy_m['avg_slowdown']:.2f}  util={easy_m['avg_utilization']:.1%}")
+    print(f"  FCFS  wait={fcfs_m['avg_waiting_time']:.1f} s_sim  sd={fcfs_m['avg_slowdown']:.2f}  util={fcfs_m['avg_utilization']:.1%}")
+    print(f"  SJF   wait={sjf_wait:.1f} s_sim  sd={sjf_m['avg_slowdown']:.2f}  util={sjf_util:.1%}")
+    print(f"  EASY  wait={easy_m['avg_waiting_time']:.1f} s_sim  sd={easy_m['avg_slowdown']:.2f}  util={easy_m['avg_utilization']:.1%}")
     if sjf_util < 0.05:
         print(f"  ⚠️  SJF util={sjf_util:.1%} is suspiciously low (< 5%). Check workload/platform sizing.")
-    print(f"\n  → PPO target: win_rate > 80% vs SJF wait={sjf_wait:.1f}s  util >= {sjf_util*0.8:.1%}")
+    print(f"\n  → PPO target: win_rate > 80% vs SJF wait={sjf_wait:.1f} s_sim  util >= {sjf_util*0.8:.1%}")
 
     # ── Resolve workload and count jobs ─────────────────────────────────────
     workload_path = Path(_WORKLOAD)
@@ -436,7 +436,7 @@ def main() -> None:
 
     model.save(save_path)
     print(f"\n  Final model : {save_path}.zip")
-    print(f"  Training    : {train_time:.0f}s ({train_time/60:.1f} min)")
+    print(f"  Training    : {train_time:.0f} s_wall ({train_time/60:.1f} min)")
     print(f"  Steps       : {model.num_timesteps:,}")
     print(f"  Episodes    : {diagnostics_cb._n_episodes}")
     print(f"  Best completed jobs in one Mock episode: {diagnostics_cb._best_completed}/{num_jobs}")
@@ -453,7 +453,7 @@ def main() -> None:
         print(f"{'─'*70}")
         print(f"  {'Metric':<28} | {'Mock SJF':>10} | {'PPO (Real)':>12}")
         print(f"{'─'*70}")
-        print(f"  {'Avg Waiting Time (s)':<28} | {sjf_wait:>10.2f} | {real_m['avg_waiting_time']:>12.2f}")
+        print(f"  {'Avg Waiting Time (s_sim)':<28} | {sjf_wait:>10.2f} | {real_m['avg_waiting_time']:>12.2f}")
         print(f"  {'Avg Slowdown':<28} | {sjf_m['avg_slowdown']:>10.2f} | {real_m['avg_slowdown']:>12.2f}")
         print(f"  {'Avg Utilization (%)':<28} | {sjf_m['avg_utilization']:>9.1%}  | {real_m['avg_utilization']:>11.1%}")
         print(f"{'='*70}")

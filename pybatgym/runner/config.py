@@ -20,7 +20,7 @@ class Request(BaseModel):
     policies: list[Literal['fcfs', 'sjf', 'easy', 'random']] = Field(default_factory=lambda: ['fcfs', 'sjf'], min_length=1, max_length=4)
     seed: int = Field(default=0, ge=0, le=2**31 - 1)
     random_seeds: int = Field(default=1, ge=1, le=20)
-    timeout_seconds: float = Field(default=120.0, ge=0.1, le=86400.0)
+    timeout_seconds: float = Field(default=120.0, ge=0.1, le=86400.0, description='Wall-clock seconds allowed for worker execution')
     max_steps: int | None = Field(default=None, ge=1, le=1000000)
 
     @field_validator('policies')

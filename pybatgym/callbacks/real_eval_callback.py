@@ -237,6 +237,6 @@ class RealEvalCallback(BaseCallback):
         if self.verbose >= 1:
             print(
                 f"  [RealEval #{self._eval_count}] "
-                f"wait={avg_wait:.1f}s  util={avg_util:.1%}  sd={avg_sd:.2f}  "
-                f"reward={avg_rew:.2f}  t={elapsed:.0f}s"
+                f"wait={avg_wait:.1f} s_sim  util={avg_util:.1%}  sd={avg_sd:.2f}  "
+                f"reward={avg_rew:.2f}  wall_elapsed={elapsed:.0f} s_wall"
             )

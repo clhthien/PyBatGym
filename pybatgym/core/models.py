@@ -30,7 +30,11 @@ class ScheduleCommandType(Enum):
 
 @dataclass
 class Job:
-    """Represents an HPC batch job."""
+    """Simulated HPC job; all timestamps and durations are simulation seconds.
+
+    requested_walltime is the simulated job's requested time limit, not the
+    wall-clock duration of the Python program or runner timeout.
+    """
 
     job_id: int
     submit_time: float

@@ -150,7 +150,7 @@ class _MockEpisodeDiagnosticsCallback(BaseCallback):
             print(
                 f"  [Mock ep {self._n_episodes:>4}] "
                 f"completed={completed_count}/{self.expected_jobs} {status:<10} "
-                f"wait={avg_wait:>8.2f}s  "
+                f"wait={avg_wait:>8.2f} s_sim  "
                 f"util={util:>6.1%}  "
                 f"reward={total_reward:>+10.4f}  "
                 f"steps={step:>8,}"
@@ -250,7 +250,7 @@ def validate_on_real(model: PPO, real_config: PyBatGymConfig, num_episodes: int 
             utils.append(util)
             sds.append(avg_sd)
             rewards.append(ep_reward)
-            print(f"    ep {ep+1}: wait={waits[-1]:.1f}s  util={utils[-1] if utils else 0:.1%}  reward={ep_reward:.2f}")
+            print(f"    ep {ep+1}: wait={waits[-1]:.1f} s_sim  util={utils[-1] if utils else 0:.1%}  reward={ep_reward:.2f}")
     except Exception as exc:
         print(f"  [Real validation] Failed: {exc}")
         return {}
@@ -313,9 +313,9 @@ def main() -> None:
     _tmp.close()
 
     sjf_wait = sjf_m["avg_waiting_time"]
-    print(f"  FCFS wait={fcfs_m['avg_waiting_time']:.1f}s  util={fcfs_m['avg_utilization']:.1%}")
-    print(f"  SJF  wait={sjf_wait:.1f}s  util={sjf_m['avg_utilization']:.1%}")
-    print(f"  EASY wait={easy_m['avg_waiting_time']:.1f}s  util={easy_m['avg_utilization']:.1%}")
+    print(f"  FCFS wait={fcfs_m['avg_waiting_time']:.1f} s_sim  util={fcfs_m['avg_utilization']:.1%}")
+    print(f"  SJF  wait={sjf_wait:.1f} s_sim  util={sjf_m['avg_utilization']:.1%}")
+    print(f"  EASY wait={easy_m['avg_waiting_time']:.1f} s_sim  util={easy_m['avg_utilization']:.1%}")
 
     # ── Create envs ─────────────────────────────────────────────────────────
     print("\n[2/5] Creating Mock training env...")
@@ -401,7 +401,7 @@ def main() -> None:
         print(f"\n{'='*70}")
         print(f"  FINAL RESULTS (Real BatSim)")
         print(f"  Metric                     | SJF (Mock) | PPO (Real)")
-        print(f"  Wait Time (s)              | {sjf_wait:>10.2f} | {real_m['avg_waiting_time']:>10.2f}")
+        print(f"  Wait Time (s_sim)              | {sjf_wait:>10.2f} | {real_m['avg_waiting_time']:>10.2f}")
         print(f"  Utilization (%)            | {sjf_m['avg_utilization']:>9.1%} | {real_m['avg_utilization']:>9.1%}")
         print(f"{'='*70}")
 

@@ -178,6 +178,9 @@ def test_tc10_repeat_runs_have_separate_immutable_output(case):
     first = case.launch(policies=('fcfs',), seed=5)
     verify_success(case, first, 'mock', ('FCFS',))
     original = (RUNS / first / 'results/jobs.csv').read_bytes()
+    # The detail page reloads once when polling sees terminal state. Wait for
+    # that render before initiating another navigation, rather than racing it.
+    case.page.locator('#run-monitor[data-terminal="true"]').wait_for(state='attached', timeout=15000)
     case.open()
     second = case.launch(policies=('fcfs',), seed=5)
     verify_success(case, second, 'mock', ('FCFS',))

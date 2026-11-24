@@ -199,7 +199,11 @@ class PyBatGymEnv(gym.Env):
         }
 
     def _build_episode_metrics(self) -> dict[str, Any]:
-        """Return final episode metrics before vectorized env auto-reset."""
+        """Return metrics before auto-reset; durations use simulator seconds.
+
+        Makespan is the final simulator clock from episode origin, including any
+        idle time before the first submit. Throughput is jobs/simulation-second.
+        """
         completed = self._adapter.get_completed_jobs()
         completed_count = len(completed)
         makespan = self._adapter.get_current_time()
@@ -234,7 +238,7 @@ class PyBatGymEnv(gym.Env):
 
         lines = [
             f"╔══ PyBatGym ══════════════════════╗",
-            f"║ Step: {self._step_count:<6} Time: {self._adapter.get_current_time():<10.1f}║",
+            f"║ Step: {self._step_count:<6} Sim time: {self._adapter.get_current_time():.1f} s_sim ║",
             f"║ Pending: {len(self._state.get('pending_jobs', [])):<5} "
             f"Completed: {len(self._adapter.get_completed_jobs()):<5}║",
             f"║ Util: {resource.utilization:.1%}  "

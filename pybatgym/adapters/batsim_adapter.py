@@ -324,7 +324,7 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
                 self._is_done = True
         except queue.Empty:
             print(
-                f"[RealBatsimAdapter] Timeout ({timeout}s) waiting for BatSim. "
+                f"[RealBatsimAdapter] Timeout ({timeout} s_wall) waiting for BatSim. "
                 "The BatSim container may have taken too long to connect or crashed."
             )
             self._is_done = True
@@ -480,7 +480,7 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
         self._events.append(Event(EventType.JOB_SUBMITTED, self._internal_time, job=py_job))
         self._needs_wakeup = True
         if self._batsim_verbose:
-            print(f"  [BatSim t={job.submit_time:.1f}] JOB_SUBMIT  #{py_job.job_id:3d} | cores={py_job.requested_resources} | walltime={py_job.actual_runtime:.1f}s", flush=True)
+            print(f"  [BatSim sim_t={job.submit_time:.1f} s_sim] JOB_SUBMIT  #{py_job.job_id:3d} | cores={py_job.requested_resources} | requested_walltime={py_job.requested_walltime:.1f} s_sim | profile_runtime={py_job.actual_runtime:.1f} s_sim", flush=True)
 
     def onJobCompletion(self, job) -> None:
         """Record job completion — do NOT block here."""
@@ -511,7 +511,7 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
             if self._batsim_verbose:
                 n_done = len(self._completed_jobs)
                 n_total = n_done + len(self._running_jobs) + len(self._pending_jobs)
-                print(f"  [BatSim t={py_job.finish_time:7.1f}] JOB_DONE    #{py_job.job_id:3d} | wait={py_job.waiting_time:.1f}s | run={py_job.actual_runtime:.1f}s | done={n_done}/{n_total}", flush=True)
+                print(f"  [BatSim sim_t={py_job.finish_time:7.1f} s_sim] JOB_DONE    #{py_job.job_id:3d} | wait={py_job.waiting_time:.1f} s_sim | runtime={py_job.actual_runtime:.1f} s_sim | done={n_done}/{n_total}", flush=True)
         self._needs_wakeup = True
 
     def onNoMoreEvents(self) -> None:
@@ -595,5 +595,5 @@ class RealBatsimAdapter(BatsimAdapter, BatsimScheduler):
 
     def onSimulationEnds(self) -> None:
         if getattr(self, '_batsim_verbose', False):
-            print(f"  [BatSim] Simulation ENDS at t={self._internal_time:.1f}s", flush=True)
+            print(f"  [BatSim] Simulation ENDS at sim_t={self._internal_time:.1f} s_sim (simulation seconds, not wall-clock)", flush=True)
         self._state_queue.put("DONE")

@@ -40,6 +40,9 @@ def _run(tmp_path: Path, name: str) -> Path:
 
 def test_runner_writes_complete_and_consistent_artifacts(tmp_path):
     out = _run(tmp_path, "run1")
+    units=json.loads((out/'units.json').read_text())
+    assert 'simulation seconds' in units['avg_waiting_time']
+    assert 'wall-clock seconds' in units['timeout_seconds']
     for name in ("config_resolved.json", "env_info.json", "per_episode_metrics.csv",
                  "benchmark_summary.csv", "comparison_table.csv", "steps.csv", "jobs.csv"):
         assert (out / name).is_file(), name

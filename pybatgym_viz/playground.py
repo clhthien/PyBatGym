@@ -21,6 +21,7 @@ STATE_LABELS = {'CREATED': 'Đã tạo', 'QUEUED': 'Đã tiếp nhận', 'VALIDA
                 'RUNNING': 'Đang chạy', 'VERIFYING': 'Kiểm chứng kết quả', 'SUCCEEDED': 'Thành công',
                 'FAILED': 'Thất bại', 'TIMED_OUT': 'Hết thời gian', 'CANCELLED': 'Đã hủy'}
 DOWNLOADS = {'request.json', 'config_resolved.json', 'status.json', 'verification.json',
+             'units.json', 'results/units.json',
              'stdout.log', 'stderr.log', 'results/comparison_table.csv', 'results/per_episode_metrics.csv',
              'results/jobs.csv', 'results/steps.csv', 'results/benchmark_summary.csv'}
 _WORKLOAD_CATALOG = {}
@@ -253,7 +254,10 @@ def dashboard_data(run_id):
         abort(400)
     directory = run_dir(run_id)
     run_summary(directory)  # Reconcile scheduler termination during live polling.
-    return jsonify(projection(directory, request.args.get('episode'), fraction))
+    timeline_view = request.args.get('timeline_view', 'full')
+    if timeline_view not in ('full', 'window'):
+        abort(400)
+    return jsonify(projection(directory, request.args.get('episode'), fraction, timeline_view))
 
 
 @bp.get('/runs/<run_id>/dashboard/jobs')

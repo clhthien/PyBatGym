@@ -42,6 +42,8 @@ Không cần mở shell, viz, tensorboard hoặc service batsim cũ để dùng 
 
 Timeout giới hạn worker theo thời gian thực; validation/verification/cleanup có thể làm tổng run lâu hơn. Simulation time là đồng hồ mô phỏng. Các preset trên dùng 32 core mô phỏng. FCFS+SJF với input 10.000 job tạo 20.000 dòng job-policy, không phải input 20.000 job.
 
+Đơn vị: `s_sim` trong log mới = giây mô phỏng; `s_wall` = giây thực. 4.817,8 s mô phỏng không phải 4.817,8 ms: đó là khoảng 1 giờ 20 phút của hệ thống giả lập, có thể tính trong vài giây thực. CSV giữ nguyên đơn vị giây mô phỏng; run mới có `units.json` để đối chiếu. Waiting time = start − submit; cam là trung bình, xanh là p95 (với 100 job, giá trị thứ 95 sau sắp xếp). Timeline mặc định xem toàn episode; chế độ chi tiết chỉ xem quanh con trỏ Replay.
+
 ## 3. Chạy bằng terminal
 
 Khởi động riêng shell nếu dùng CLI:
